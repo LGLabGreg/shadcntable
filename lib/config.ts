@@ -1,3 +1,5 @@
+export const IS_PRODUCTION = process.env.VERCEL_ENV === 'production'
+
 export const siteConfig = {
   name: 'shadcntable',
   url: 'https://shadcntable.com',
