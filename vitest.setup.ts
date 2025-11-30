@@ -25,7 +25,7 @@ beforeAll(() => {
   })
 })
 
-afterEach(async () => {
+afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.clearAllMocks()
