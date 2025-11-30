@@ -3,7 +3,7 @@ import { DataTable } from '@/registry/components/shadcntable/data-table'
 import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
 import { render } from '@/vitest.utils'
 import { type ColumnDef } from '@tanstack/react-table'
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import type userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -290,7 +290,9 @@ describe('DataTable Text Filter with Debounce', () => {
     expect(screen.getByText('Wireless Mouse')).toBeInTheDocument()
 
     // Advance timers past debounce
-    await vi.advanceTimersByTimeAsync(350)
+    await act(async () => {
+      vi.advanceTimersByTime(350)
+    })
 
     await waitFor(() => {
       expect(screen.getByText('Laptop Pro')).toBeInTheDocument()
