@@ -51,6 +51,7 @@ export function DataTableColumnHeader<TData, TValue>({
               variant='ghost'
               size='icon-sm'
               className='data-[state=open]:bg-accent'
+              aria-label={locale.columnHeader.sortMenuLabel}
             >
               {isSortedDesc ? (
                 <ArrowDown />
@@ -97,6 +98,7 @@ export function DataTableColumnHeader<TData, TValue>({
                 variant='ghost'
                 size='icon-sm'
                 className={cn(hasActiveFilter && 'bg-accent text-accent-foreground')}
+                aria-label={locale.columnHeader.filterMenuLabel}
               >
                 <ListFilter />
               </Button>

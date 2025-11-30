@@ -77,6 +77,11 @@ export function DataTable<TData, TValue>({
           ...column,
           filterFn: 'arrIncludesSome' as FilterFnOption<TData>,
         }
+      } else if (column.meta?.filterConfig?.variant === 'select') {
+        return {
+          ...column,
+          filterFn: 'equals' as FilterFnOption<TData>,
+        }
       }
       return column
     })
