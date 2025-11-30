@@ -1,7 +1,5 @@
 # shadcntable
 
-# shadcntable
-
 ![Beta](https://img.shields.io/badge/status-beta-yellow)
 
 > ⚠️ **Beta Notice:** shadcntable is currently in beta. APIs may change between releases. We encourage you to try it out and [share feedback](https://github.com/LGLabGreg/shadcntable/issues)!
