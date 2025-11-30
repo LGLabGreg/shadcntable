@@ -31,6 +31,8 @@ export const defaultDataTableLocale: DataTableLocale = {
     clearSorting: 'Clear sorting',
     hideColumn: 'Hide column',
     clearFilter: 'Clear filter',
+    sortMenuLabel: 'Toggle sort options',
+    filterMenuLabel: 'Toggle filter options',
   },
   filters: {
     multiSelect: {

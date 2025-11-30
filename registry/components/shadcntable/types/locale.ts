@@ -29,6 +29,8 @@ export interface DataTableLocale {
     clearSorting: string
     hideColumn: string
     clearFilter: string
+    sortMenuLabel: string
+    filterMenuLabel: string
   }
   filters: {
     multiSelect: {
