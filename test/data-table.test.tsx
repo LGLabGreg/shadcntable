@@ -66,8 +66,6 @@ describe('DataTable', () => {
   it('renders empty state when no data provided', () => {
     render(<DataTable columns={columns} data={[]} />)
 
-    screen.debug(undefined, Infinity)
-
     expect(screen.getByText(defaultDataTableLocale.body.noResults)).toBeInTheDocument()
   })
 
