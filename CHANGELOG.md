@@ -1,5 +1,11 @@
 # shadcntable
 
+## 0.1.3
+
+### Patch Changes
+
+- [#6](https://github.com/LGLabGreg/shadcntable/pull/6) [`7f3ae01`](https://github.com/LGLabGreg/shadcntable/commit/7f3ae0118341805f243fbf7bfca8f790f5c91433) Thanks [@LGLabGreg](https://github.com/LGLabGreg)! - fix select filter changing from uncontrolled to controlled
+
 ## 0.1.2
 
 ### Patch Changes

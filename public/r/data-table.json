@@ -81,7 +81,7 @@
     },
     {
       "path": "registry/components/shadcntable/filters/select-filter.tsx",
-      "content": "import { Select } from '@/components/ui/select'\nimport {\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from '@/components/ui/select'\n\nimport type { FilterComponentProps } from '../types/filters'\n\nexport function SelectFilter({ value, onChange, config }: FilterComponentProps) {\n  return (\n    <Select onValueChange={(val) => onChange(val)} value={value?.toString()}>\n      <SelectTrigger className='h-8 w-full'>\n        <SelectValue placeholder={config.placeholder} />\n      </SelectTrigger>\n      <SelectContent>\n        {config.options?.map((option) => (\n          <SelectItem key={option.value} value={String(option.value)}>\n            {option.label}\n          </SelectItem>\n        ))}\n      </SelectContent>\n    </Select>\n  )\n}\n",
+      "content": "import { Select } from '@/components/ui/select'\nimport {\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from '@/components/ui/select'\n\nimport type { FilterComponentProps } from '../types/filters'\n\nexport function SelectFilter({ value, onChange, config }: FilterComponentProps) {\n  return (\n    <Select onValueChange={(val) => onChange(val)} value={value?.toString() ?? ''}>\n      <SelectTrigger className='h-8 w-full'>\n        <SelectValue placeholder={config.placeholder} />\n      </SelectTrigger>\n      <SelectContent>\n        {config.options?.map((option) => (\n          <SelectItem key={option.value} value={String(option.value)}>\n            {option.label}\n          </SelectItem>\n        ))}\n      </SelectContent>\n    </Select>\n  )\n}\n",
       "type": "registry:component"
     },
     {
