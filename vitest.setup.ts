@@ -1,11 +1,15 @@
-import '@testing-library/dom'
+import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterEach, beforeEach, vi } from 'vitest'
+import { afterEach, beforeAll, vi } from 'vitest'
 
-beforeEach(() => {
-  vi.clearAllMocks()
+beforeAll(() => {
+  vi.stubGlobal('jest', {
+    advanceTimersByTime: vi.advanceTimersByTime.bind(vi),
+  })
 })
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
+  vi.clearAllMocks()
 })
