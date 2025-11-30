@@ -1,0 +1,176 @@
+---
+title: Quick Start
+description: Get started with shadcntable in minutes
+---
+
+## Basic Usage
+
+Here's a minimal example to get you started with the DataTable component.
+
+### Define your data type
+
+First, define the shape of your data:
+
+```typescript
+type User = {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+```
+
+### Create your columns
+
+Define the columns for your table using TanStack Table's `ColumnDef`:
+
+```tsx
+import { type ColumnDef } from '@tanstack/react-table'
+
+import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
+
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+  },
+  {
+    accessorKey: 'email',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
+  },
+  {
+    accessorKey: 'role',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
+  },
+]
+```
+
+### Add your data
+
+Create some sample data:
+
+```typescript
+const users: User[] = [
+  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Admin' },
+  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'User' },
+  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', role: 'User' },
+  { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: 'Editor' },
+  { id: '5', name: 'Charlie Wilson', email: 'charlie@example.com', role: 'User' },
+]
+```
+
+### Render the DataTable
+
+Put it all together in your component:
+
+```tsx
+'use client'
+
+import { type ColumnDef } from '@tanstack/react-table'
+
+import { DataTable } from '@/components/shadcntable/data-table'
+import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
+
+type User = {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+  },
+  {
+    accessorKey: 'email',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
+  },
+  {
+    accessorKey: 'role',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
+  },
+]
+
+const users: User[] = [
+  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Admin' },
+  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'User' },
+  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', role: 'User' },
+  { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: 'Editor' },
+  { id: '5', name: 'Charlie Wilson', email: 'charlie@example.com', role: 'User' },
+]
+
+export function UsersTable() {
+  return <DataTable columns={columns} data={users} />
+}
+```
+
+## Adding Features
+
+### Row Selection
+
+Enable row selection by passing the `rowSelection` prop:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={users}
+  rowSelection={{
+    enableRowSelection: true,
+    onRowSelectionChange: (selection) => console.log('Selected:', selection),
+  }}
+/>
+```
+
+### Column Filters
+
+Add filters to your columns using the `meta.filterConfig` property:
+
+```tsx
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+    meta: {
+      filterConfig: {
+        title: 'Filter by name',
+        variant: 'text',
+        placeholder: 'Search names...',
+        debounceMs: 300,
+      },
+    },
+  },
+  {
+    accessorKey: 'role',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
+    meta: {
+      filterConfig: {
+        title: 'Filter by role',
+        variant: 'select',
+        placeholder: 'Select role...',
+        options: [
+          { label: 'Admin', value: 'Admin' },
+          { label: 'Editor', value: 'Editor' },
+          { label: 'User', value: 'User' },
+        ],
+      },
+    },
+  },
+]
+```
+
+### Pagination
+
+Configure pagination with the `pagination` prop:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={users}
+  pagination={{
+    pageSize: 10,
+    pageSizeOptions: [10, 20, 50],
+  }}
+/>
+```

@@ -1,0 +1,759 @@
+---
+title: DataTable
+description: A powerful, fully-featured data table component built on TanStack Table
+---
+
+## Overview
+
+The DataTable component provides a feature-rich table with sorting, filtering, pagination, row selection, and more. It's built on top of [TanStack Table](https://tanstack.com/table) and styled with shadcn/ui components.
+
+## Installation
+
+```bash
+pnpm dlx shadcn@latest add https://shadcntable.com/r/data-table.json
+```
+
+## Basic Usage
+
+```tsx
+import { type ColumnDef } from '@tanstack/react-table'
+
+import { DataTable } from '@/components/shadcntable/data-table'
+import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
+
+type User = {
+  id: string
+  name: string
+  email: string
+}
+
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+  },
+  {
+    accessorKey: 'email',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
+  },
+]
+
+const data: User[] = [
+  { id: '1', name: 'John Doe', email: 'john@example.com' },
+  { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
+]
+
+export function MyTable() {
+  return <DataTable columns={columns} data={data} />
+}
+```
+
+## DataTable Props
+
+The main `DataTable` component accepts the following props:
+
+<PropsTable
+  data={[
+    {
+      name: 'columns',
+      type: 'ColumnDef<TData, TValue>[]',
+      default: 'Required',
+      description: "Column definitions using TanStack Table's ColumnDef",
+    },
+    {
+      name: 'data',
+      type: 'TData[]',
+      default: 'Required',
+      description: 'Array of data to display',
+    },
+    {
+      name: 'emptyState',
+      type: 'React.ReactNode',
+      description: 'Custom empty state when no data',
+    },
+    {
+      name: 'isLoading',
+      type: 'boolean',
+      default: 'false',
+      description: 'Shows loading skeleton when true',
+    },
+    {
+      name: 'locale',
+      type: 'Partial<DataTableLocale>',
+      description: 'Override default text strings for internationalization',
+    },
+    {
+      name: 'onRowClick',
+      type: '(row: TData) => void',
+      description: 'Callback when a row is clicked',
+    },
+    {
+      name: 'pagination',
+      type: 'DataTablePaginationConfig',
+      description: 'Pagination configuration',
+    },
+    {
+      name: 'rowSelection',
+      type: 'DataTableRowSelectionConfig',
+      description: 'Row selection configuration',
+    },
+    {
+      name: 'toolbar',
+      type: 'DataTableToolbarConfig',
+      description: 'Toolbar configuration',
+    },
+  ]}
+/>
+
+## Pagination
+
+Configure pagination using the `pagination` prop:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  pagination={{
+    enabled: true,
+    pageSize: 10,
+    pageSizeOptions: [10, 25, 50, 100],
+  }}
+/>
+```
+
+### DataTablePaginationConfig
+
+<PropsTable
+  data={[
+    {
+      name: 'enabled',
+      type: 'boolean',
+      default: 'true',
+      description: 'Enable/disable pagination',
+    },
+    { name: 'pageSize', type: 'number', default: '10', description: 'Initial page size' },
+    {
+      name: 'pageSizeOptions',
+      type: 'number[]',
+      default: '[10, 25, 50]',
+      description: 'Available page size options',
+    },
+  ]}
+/>
+
+## Row Selection
+
+Enable row selection with checkboxes:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  rowSelection={{
+    enableRowSelection: true,
+    onRowSelectionChange: (selectedRows) => {
+      console.log('Selected:', selectedRows)
+    },
+  }}
+/>
+```
+
+You can also conditionally enable selection per row:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  rowSelection={{
+    enableRowSelection: (row) => row.original.status !== 'locked',
+    onRowSelectionChange: (selectedRows) => {
+      console.log('Selected:', selectedRows)
+    },
+  }}
+/>
+```
+
+### DataTableRowSelectionConfig
+
+<PropsTable
+  data={[
+    {
+      name: 'enableRowSelection',
+      type: 'boolean | ((row: Row<TData>) => boolean)',
+      description: 'Enable selection globally or per-row',
+    },
+    {
+      name: 'onRowSelectionChange',
+      type: '(selectedRows: TData[]) => void',
+      description: 'Callback when selection changes',
+    },
+  ]}
+/>
+
+## Toolbar
+
+Configure the toolbar with search and view options:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  toolbar={{
+    search: true,
+    viewOptions: true,
+  }}
+/>
+```
+
+### DataTableToolbarConfig
+
+<PropsTable
+  data={[
+    {
+      name: 'search',
+      type: 'boolean',
+      default: 'true',
+      description: 'Show global search input',
+    },
+    {
+      name: 'viewOptions',
+      type: 'boolean',
+      default: 'true',
+      description: 'Show column visibility toggle',
+    },
+  ]}
+/>
+
+## Column Header
+
+Use `DataTableColumnHeader` for sortable column headers with filtering:
+
+```tsx
+import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
+
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+  },
+]
+```
+
+The column header provides:
+
+- **Sorting** - Click to sort ascending/descending
+- **Column visibility** - Option to hide the column
+- **Filtering** - When `filterConfig` is set in column meta
+
+## Column Filters
+
+Add filters to columns using the `meta.filterConfig` property:
+
+### Text Filter
+
+```tsx
+{
+  accessorKey: 'name',
+  header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+  meta: {
+    filterConfig: {
+      title: 'Filter by name',
+      description: 'Search for users by name',
+      variant: 'text',
+      placeholder: 'Enter name...',
+      debounceMs: 300,
+    },
+  },
+}
+```
+
+### Select Filter
+
+```tsx
+{
+  accessorKey: 'status',
+  header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
+  meta: {
+    filterConfig: {
+      title: 'Filter by status',
+      variant: 'select',
+      placeholder: 'Select status...',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+        { label: 'Pending', value: 'pending' },
+      ],
+    },
+  },
+}
+```
+
+### Number Range Filter
+
+```tsx
+{
+  accessorKey: 'age',
+  header: ({ column }) => <DataTableColumnHeader column={column} title='Age' />,
+  meta: {
+    filterConfig: {
+      title: 'Filter by age',
+      variant: 'number-range',
+      placeholder: 'Min - Max',
+    },
+  },
+}
+```
+
+### Date Range Filter
+
+```tsx
+{
+  accessorKey: 'createdAt',
+  header: ({ column }) => <DataTableColumnHeader column={column} title='Created' />,
+  meta: {
+    filterConfig: {
+      title: 'Filter by date',
+      variant: 'date-range',
+      placeholder: 'Select date range...',
+    },
+  },
+}
+```
+
+### Custom Filter
+
+```tsx
+{
+  accessorKey: 'age',
+  header: ({ column }) => <DataTableColumnHeader column={column} title='Age' />,
+  meta: {
+    filterConfig: {
+      variant: 'custom',
+      title: 'Age Filter',
+      component: ({ value, onChange }) => {
+        const isChecked = value === true
+
+        return (
+          <div className='flex items-center gap-2'>
+            <Checkbox
+              id='adults-only'
+              checked={isChecked}
+              onCheckedChange={(checked) => {
+                onChange(checked === true)
+              }}
+            />
+            <Label htmlFor='adults-only' className='text-sm font-normal cursor-pointer'>
+              Adults only (18+)
+            </Label>
+          </div>
+        )
+      },
+    },
+  },
+  filterFn: (row, columnId, filterValue) => {
+    if (filterValue !== true) return true
+    const age = row.getValue<number>(columnId)
+    return age >= 18
+  },
+}
+```
+
+### FilterConfig Reference
+
+<PropsTable
+  data={[
+    {
+      name: 'variant',
+      type: 'FilterVariant',
+      default: 'Required',
+      description: 'Type of filter (text, select, date-range, etc.)',
+    },
+    { name: 'title', type: 'string', description: 'Title shown in filter popover' },
+    {
+      name: 'description',
+      type: 'string',
+      description: 'Description shown in filter popover',
+    },
+    { name: 'placeholder', type: 'string', description: 'Placeholder text' },
+    {
+      name: 'options',
+      type: 'Array<{label, value}>',
+      description: 'Options for select filters',
+    },
+    { name: 'debounceMs', type: 'number', description: 'Debounce delay in milliseconds' },
+    {
+      name: 'caseSensitive',
+      type: 'boolean',
+      default: 'false',
+      description: 'Case-sensitive text matching',
+    },
+    {
+      name: 'component',
+      type: 'React.ComponentType',
+      description: 'Custom filter component',
+    },
+  ]}
+/>
+
+### Filter Variants
+
+<PropsTable
+  data={[
+    { name: 'text', type: 'string', description: 'Free text input' },
+    { name: 'select', type: 'string', description: 'Single select dropdown' },
+    { name: 'multi-select', type: 'string', description: 'Multi-select dropdown' },
+    { name: 'date-range', type: 'string', description: 'Date range picker' },
+    { name: 'number-range', type: 'string', description: 'Min/max number inputs' },
+    { name: 'custom', type: 'string', description: 'Custom filter component' },
+  ]}
+/>
+
+## Loading State
+
+Show a loading skeleton while fetching data:
+
+```tsx
+const [isLoading, setIsLoading] = useState(true)
+
+<DataTable
+  columns={columns}
+  data={data}
+  isLoading={isLoading}
+/>
+```
+
+## Custom Empty State
+
+Customize the empty state when there's no data:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={[]}
+  emptyState={
+    <div className='text-center py-10'>
+      <p className='text-muted-foreground'>No users found</p>
+      <Button onClick={() => refetch()}>Refresh</Button>
+    </div>
+  }
+/>
+```
+
+## Internationalization
+
+Override all text strings in the DataTable using the `locale` prop. You can override individual strings or provide a complete locale object:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  locale={{
+    body: {
+      noResults: 'Aucun résultat',
+    },
+    pagination: {
+      rowsSelected: 'ligne(s) sélectionnée(s).',
+      rowsPerPage: 'Lignes par page',
+      page: 'Page',
+      of: 'sur',
+      goToFirstPage: 'Aller à la première page',
+      goToPreviousPage: 'Aller à la page précédente',
+      goToNextPage: 'Aller à la page suivante',
+      goToLastPage: 'Aller à la dernière page',
+    },
+    toolbar: {
+      searchPlaceholder: 'Rechercher...',
+    },
+    viewOptions: {
+      view: 'Vue',
+      toggleColumns: 'Basculer les colonnes',
+    },
+    rowSelection: {
+      selectAll: 'Tout sélectionner',
+      selectRow: 'Sélectionner la ligne',
+    },
+    columnHeader: {
+      sortAscending: 'Trier par ordre croissant',
+      sortDescending: 'Trier par ordre décroissant',
+      clearSorting: 'Effacer le tri',
+      hideColumn: 'Masquer la colonne',
+      clearFilter: 'Effacer le filtre',
+    },
+    filters: {
+      multiSelect: {
+        search: 'Rechercher...',
+        noResults: 'Aucun résultat trouvé.',
+      },
+      numberRange: {
+        min: 'Min',
+        max: 'Max',
+      },
+    },
+  }}
+/>
+```
+
+You can also override only specific strings:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  locale={{
+    body: {
+      noResults: 'No data available',
+    },
+    pagination: {
+      rowsPerPage: 'Items per page',
+    },
+  }}
+/>
+```
+
+### Locale Structure
+
+The `locale` prop accepts a `Partial<DataTableLocale>` object with the following structure:
+
+- `body.noResults` - Empty state message
+- `pagination.rowsSelected` - Row selection count text
+- `pagination.rowsPerPage` - "Rows per page" label
+- `pagination.page` - "Page" label
+- `pagination.of` - "of" separator
+- `pagination.goToFirstPage` - Screen reader text for first page button
+- `pagination.goToPreviousPage` - Screen reader text for previous page button
+- `pagination.goToNextPage` - Screen reader text for next page button
+- `pagination.goToLastPage` - Screen reader text for last page button
+- `toolbar.searchPlaceholder` - Default search input placeholder
+- `viewOptions.view` - View options button label
+- `viewOptions.toggleColumns` - Toggle columns menu label
+- `rowSelection.selectAll` - Select all checkbox aria-label
+- `rowSelection.selectRow` - Select row checkbox aria-label
+- `columnHeader.sortAscending` - Sort ascending menu item
+- `columnHeader.sortDescending` - Sort descending menu item
+- `columnHeader.clearSorting` - Clear sorting menu item
+- `columnHeader.hideColumn` - Hide column menu item
+- `columnHeader.clearFilter` - Clear filter button text
+- `filters.multiSelect.search` - Multi-select filter search placeholder
+- `filters.multiSelect.noResults` - Multi-select filter no results message
+- `filters.numberRange.min` - Number range filter min placeholder
+- `filters.numberRange.max` - Number range filter max placeholder
+
+## Row Click Handler
+
+Handle row clicks:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  onRowClick={(user) => {
+    router.push(`/users/${user.id}`)
+  }}
+/>
+```
+
+## Custom Cell Rendering
+
+Customize how cells are rendered:
+
+```tsx
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'status',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
+    cell: ({ row }) => {
+      const status = row.getValue('status') as string
+      return (
+        <Badge variant={status === 'active' ? 'default' : 'secondary'}>{status}</Badge>
+      )
+    },
+  },
+  {
+    accessorKey: 'createdAt',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Created' />,
+    cell: ({ row }) => {
+      const date = new Date(row.getValue('createdAt'))
+      return date.toLocaleDateString()
+    },
+  },
+]
+```
+
+## Actions Column
+
+Add an actions column with a dropdown menu:
+
+```tsx
+import { MoreHorizontal } from 'lucide-react'
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
+const columns: ColumnDef<User>[] = [
+  // ... other columns
+  {
+    id: 'actions',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
+    cell: ({ row }) => {
+      const user = row.original
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='ghost' className='h-8 w-8 p-0'>
+              <MoreHorizontal className='h-4 w-4' />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
+              Copy ID
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`/users/${user.id}`)}>
+              View details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => deleteUser(user.id)}>
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  },
+]
+```
+
+## Complete Example
+
+Here's a complete example with all features:
+
+```tsx
+'use client'
+
+import { type ColumnDef } from '@tanstack/react-table'
+import { MoreHorizontal } from 'lucide-react'
+
+import { DataTable } from '@/components/shadcntable/data-table'
+import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
+type User = {
+  id: string
+  name: string
+  email: string
+  status: 'active' | 'inactive'
+  role: string
+}
+
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+    meta: {
+      filterConfig: {
+        variant: 'text',
+        placeholder: 'Filter names...',
+      },
+    },
+  },
+  {
+    accessorKey: 'email',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
+    cell: ({ row }) => {
+      const status = row.getValue('status') as string
+      return (
+        <Badge variant={status === 'active' ? 'default' : 'secondary'}>{status}</Badge>
+      )
+    },
+    meta: {
+      filterConfig: {
+        variant: 'select',
+        options: [
+          { label: 'Active', value: 'active' },
+          { label: 'Inactive', value: 'inactive' },
+        ],
+      },
+    },
+  },
+  {
+    accessorKey: 'role',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
+  },
+  {
+    id: 'actions',
+    cell: ({ row }) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant='ghost' size='icon'>
+            <MoreHorizontal className='h-4 w-4' />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align='end'>
+          <DropdownMenuItem>View</DropdownMenuItem>
+          <DropdownMenuItem>Edit</DropdownMenuItem>
+          <DropdownMenuItem>Delete</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ),
+  },
+]
+
+const users: User[] = [
+  {
+    id: '1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    status: 'active',
+    role: 'Admin',
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    status: 'active',
+    role: 'User',
+  },
+  {
+    id: '3',
+    name: 'Bob Johnson',
+    email: 'bob@example.com',
+    status: 'inactive',
+    role: 'User',
+  },
+]
+
+export function UsersTable() {
+  return (
+    <DataTable
+      columns={columns}
+      data={users}
+      pagination={{
+        pageSize: 10,
+        pageSizeOptions: [10, 25, 50],
+      }}
+      rowSelection={{
+        enableRowSelection: true,
+        onRowSelectionChange: (rows) => console.log('Selected:', rows),
+      }}
+      toolbar={{
+        search: true,
+        viewOptions: true,
+      }}
+    />
+  )
+}
+```

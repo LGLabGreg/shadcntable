@@ -1,0 +1,109 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "shadcntable",
+  "homepage": "https://shadcntable.com",
+  "items": [
+    {
+      "name": "data-table",
+      "type": "registry:block",
+      "title": "Data Table",
+      "description": "Data Table",
+      "dependencies": ["@tanstack/react-table", "date-fns", "lucide-react"],
+      "registryDependencies": [
+        "badge",
+        "button",
+        "calendar",
+        "checkbox",
+        "command",
+        "dropdown-menu",
+        "empty",
+        "input",
+        "popover",
+        "select",
+        "table"
+      ],
+      "files": [
+        {
+          "path": "registry/components/shadcntable/data-table-body.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/data-table-column-filter.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/data-table-column-header.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/data-table-header.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/data-table-pagination.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/data-table-row-selection.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/data-table-toolbar.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/data-table-view-options.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/data-table.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/filters/date-range-filter.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/filters/multi-select-filter.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/filters/number-range-filter.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/filters/select-filter.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/filters/text-filter.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/types/locale.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/types/filters.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/config/locale.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/contexts/data-table-locale-context.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/utils/debounce.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/components/shadcntable/hooks/use-shadcn-table.tsx",
+          "type": "registry:component"
+        }
+      ]
+    }
+  ]
+}
