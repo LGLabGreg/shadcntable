@@ -1,5 +1,11 @@
 # shadcntable
 
+## 0.1.4
+
+### Patch Changes
+
+- [#11](https://github.com/LGLabGreg/shadcntable/pull/11) [`c0af20a`](https://github.com/LGLabGreg/shadcntable/commit/c0af20adad4849e45208708bde43bc5290e7186b) Thanks [@LGLabGreg](https://github.com/LGLabGreg)! - Fix: date range picker filterFn
+
 ## 0.1.3
 
 ### Patch Changes
