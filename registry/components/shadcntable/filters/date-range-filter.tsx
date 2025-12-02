@@ -31,14 +31,13 @@ export function DateRangeFilter({ value, onChange, config }: FilterComponentProp
           {dateRange?.from ? (
             dateRange.to ? (
               <>
-                {format(dateRange.from, 'LLL dd, y')} -{' '}
-                {format(dateRange.to, 'LLL dd, y')}
+                {`${format(dateRange.from, 'LLL dd, y')} - ${format(dateRange.to, 'LLL dd, y')}`}
               </>
             ) : (
-              format(dateRange.from, 'LLL dd, y')
+              `${format(dateRange.from, 'LLL dd, y')}`
             )
           ) : (
-            <span>{config.placeholder}</span>
+            `${config.placeholder}`
           )}
         </Button>
       </PopoverTrigger>
@@ -51,6 +50,7 @@ export function DateRangeFilter({ value, onChange, config }: FilterComponentProp
             onChange(range)
           }}
           numberOfMonths={2}
+          captionLayout='dropdown'
         />
       </PopoverContent>
     </Popover>

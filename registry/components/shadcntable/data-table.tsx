@@ -1,6 +1,7 @@
 'use client'
 
-import { type ColumnDef, type FilterFnOption } from '@tanstack/react-table'
+import { type ColumnDef, type FilterFnOption, type Row } from '@tanstack/react-table'
+import { isAfter, isBefore, isDate, isSameDay } from 'date-fns'
 import { useMemo } from 'react'
 
 import { Table } from '@/components/ui/table'
@@ -19,6 +20,7 @@ import {
 } from './data-table-row-selection'
 import { DataTableToolbar, type DataTableToolbarConfig } from './data-table-toolbar'
 import { useShadcnTable } from './hooks/use-shadcn-table'
+import { type FilterValue } from './types/filters'
 import { type DataTableLocale } from './types/locale'
 
 interface DataTableProps<TData, TValue> {
@@ -81,6 +83,28 @@ export function DataTable<TData, TValue>({
         return {
           ...column,
           filterFn: 'equals' as FilterFnOption<TData>,
+        }
+      } else if (column.meta?.filterConfig?.variant === 'date-range') {
+        return {
+          ...column,
+          filterFn: (row: Row<TData>, columnId: string, filterValue: FilterValue) => {
+            const date = row.getValue<Date>(columnId)
+            if (!isDate(date)) return false
+            if (!filterValue) return true
+            if (
+              typeof filterValue === 'object' &&
+              'from' in filterValue &&
+              'to' in filterValue &&
+              filterValue.from &&
+              filterValue.to
+            ) {
+              return (
+                (isSameDay(date, filterValue.from) || isAfter(date, filterValue.from)) &&
+                (isSameDay(date, filterValue.to) || isBefore(date, filterValue.to))
+              )
+            }
+            return true
+          },
         }
       }
       return column

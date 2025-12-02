@@ -1,6 +1,6 @@
 # shadcntable
 
-![Beta](https://img.shields.io/badge/status-beta-yellow)
+![Beta](https://img.shields.io/badge/status-beta-yellow) [![codecov](https://codecov.io/gh/LGLabGreg/shadcntable/branch/main/graph/badge.svg)](https://codecov.io/gh/LGLabGreg/shadcntable)
 
 > ⚠️ **Beta Notice:** shadcntable is currently in beta. APIs may change between releases. We encourage you to try it out and [share feedback](https://github.com/LGLabGreg/shadcntable/issues)!
 
