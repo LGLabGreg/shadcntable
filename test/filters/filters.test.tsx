@@ -714,9 +714,6 @@ describe('DataTable Multiple Filters Combined', () => {
       vi.setSystemTime(new Date(2024, 5, 15))
     })
 
-    afterEach(() => {
-      vi.useRealTimers()
-    })
     it('renders date range filter with placeholder', async () => {
       const { user } = render(
         <DataTable columns={columnsWithDateFilter} data={testOrders} />,
