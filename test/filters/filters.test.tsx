@@ -5,6 +5,7 @@ import { render } from '@/vitest.utils'
 import { type ColumnDef } from '@tanstack/react-table'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import type userEvent from '@testing-library/user-event'
+import { type DateRange } from 'react-day-picker'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 type Product = {
@@ -14,6 +15,13 @@ type Product = {
   status: 'active' | 'inactive' | 'pending'
   price: number
   stock: number
+  createdAt: Date
+}
+
+type Order = {
+  id: string
+  customer: string
+  total: number
   createdAt: Date
 }
 
@@ -62,6 +70,39 @@ const testProducts: Product[] = [
     price: 449,
     stock: 75,
     createdAt: new Date('2024-05-01'),
+  },
+]
+
+const testOrders: Order[] = [
+  {
+    id: '1',
+    customer: 'Alice Johnson',
+    total: 150,
+    createdAt: new Date(2024, 5, 1), // June 1, 2024
+  },
+  {
+    id: '2',
+    customer: 'Bob Smith',
+    total: 250,
+    createdAt: new Date(2024, 5, 10), // June 10, 2024
+  },
+  {
+    id: '3',
+    customer: 'Carol White',
+    total: 350,
+    createdAt: new Date(2024, 5, 15), // June 15, 2024
+  },
+  {
+    id: '4',
+    customer: 'David Brown',
+    total: 450,
+    createdAt: new Date(2024, 5, 20), // June 20, 2024
+  },
+  {
+    id: '5',
+    customer: 'Eve Davis',
+    total: 550,
+    createdAt: new Date(2024, 5, 30), // June 30, 2024
   },
 ]
 
@@ -157,6 +198,55 @@ const columnsWithNumberRangeFilter: ColumnDef<Product>[] = [
   },
 ]
 
+const columnsWithDateFilter: ColumnDef<Order>[] = [
+  {
+    accessorKey: 'customer',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Customer' />,
+  },
+  {
+    accessorKey: 'total',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Total' />,
+  },
+  {
+    accessorKey: 'createdAt',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Created' />,
+    cell: ({ row }) => {
+      const date = row.getValue<Date>('createdAt')
+      return date.toLocaleDateString()
+    },
+    meta: {
+      filterConfig: {
+        title: 'Filter by date',
+        variant: 'date-range',
+        placeholder: 'Select date range...',
+      },
+    },
+    filterFn: (row, columnId, filterValue) => {
+      const dateRange = filterValue as DateRange | undefined
+      if (!dateRange?.from) return true
+
+      const cellDate = row.getValue<Date>(columnId)
+      const from = dateRange.from
+      const to = dateRange.to ?? dateRange.from
+
+      // Normalize dates to start of day for comparison
+      const cellTime = new Date(
+        cellDate.getFullYear(),
+        cellDate.getMonth(),
+        cellDate.getDate(),
+      ).getTime()
+      const fromTime = new Date(
+        from.getFullYear(),
+        from.getMonth(),
+        from.getDate(),
+      ).getTime()
+      const toTime = new Date(to.getFullYear(), to.getMonth(), to.getDate()).getTime()
+
+      return cellTime >= fromTime && cellTime <= toTime
+    },
+  },
+]
+
 // Helper to open filter popover for a column
 async function openFilterPopover(
   user: ReturnType<typeof userEvent.setup>,
@@ -169,6 +259,15 @@ async function openFilterPopover(
       name: defaultDataTableLocale.columnHeader.filterMenuLabel,
     }),
   )
+}
+
+async function selectDay(user: ReturnType<typeof userEvent.setup>, day: number) {
+  // Select a day in the calendar grid using the data-day attribute
+  // The system time is mocked to June 2024, so build the date string accordingly
+  const dateStr = `6/${day}/2024`
+  const calendar = screen.getAllByRole('grid')[0]
+  const dayButton = calendar.querySelector(`[data-day='${dateStr}']`) as Element
+  await user.click(dayButton)
 }
 
 describe('DataTable Text Filter Integration', () => {
@@ -606,6 +705,234 @@ describe('DataTable Multiple Filters Combined', () => {
       expect(screen.getByText('Monitor 27"')).toBeInTheDocument()
       expect(screen.queryByText('Laptop Pro')).not.toBeInTheDocument()
       expect(screen.queryByText('Wireless Mouse')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('DataTable Date Range Filter Integration', () => {
+    beforeEach(() => {
+      // Set system date to June 15, 2024
+      vi.setSystemTime(new Date(2024, 5, 15))
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+    it('renders date range filter with placeholder', async () => {
+      const { user } = render(
+        <DataTable columns={columnsWithDateFilter} data={testOrders} />,
+      )
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+      expect(within(filterPopover).getByText('Select date range...')).toBeInTheDocument()
+    })
+
+    it('opens calendar when date picker button is clicked', async () => {
+      const { user } = render(
+        <DataTable columns={columnsWithDateFilter} data={testOrders} />,
+      )
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+      const datePickerButton = within(filterPopover).getByRole('button', {
+        name: /select date range/i,
+      })
+      await user.click(datePickerButton)
+
+      expect(screen.getAllByRole('grid')).toHaveLength(2)
+    })
+
+    it('filters orders by selecting a single date', async () => {
+      const { user } = render(
+        <DataTable
+          columns={columnsWithDateFilter}
+          data={testOrders}
+          pagination={{ pageSize: 10 }}
+        />,
+      )
+
+      // All orders should be visible initially
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+      expect(screen.getByText('Bob Smith')).toBeInTheDocument()
+      expect(screen.getByText('Carol White')).toBeInTheDocument()
+      expect(screen.getByText('David Brown')).toBeInTheDocument()
+      expect(screen.getByText('Eve Davis')).toBeInTheDocument()
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+      const datePickerButton = within(filterPopover).getByRole('button', {
+        name: /select date range/i,
+      })
+      await user.click(datePickerButton)
+
+      const calendar = screen.getAllByRole('grid')[0]
+      await user.click(calendar.querySelector("[data-day='6/15/2024']") as Element)
+
+      await waitFor(() => {
+        // Only Carol White's order (June 15) should be visible
+        expect(screen.getByText('Carol White')).toBeInTheDocument()
+        expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument()
+        expect(screen.queryByText('Bob Smith')).not.toBeInTheDocument()
+        expect(screen.queryByText('David Brown')).not.toBeInTheDocument()
+        expect(screen.queryByText('Eve Davis')).not.toBeInTheDocument()
+      })
+    })
+
+    it('filters orders by selecting a date range', async () => {
+      const { user } = render(
+        <DataTable
+          columns={columnsWithDateFilter}
+          data={testOrders}
+          pagination={{ pageSize: 10 }}
+        />,
+      )
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+      const datePickerButton = within(filterPopover).getByRole('button', {
+        name: /select date range/i,
+      })
+      await user.click(datePickerButton)
+
+      // Select range: June 10 to June 20
+      const getCalendar = () => screen.getAllByRole('grid')[0]
+      await user.click(getCalendar().querySelector("[data-day='6/10/2024']") as Element)
+      await user.click(getCalendar().querySelector("[data-day='6/20/2024']") as Element)
+
+      await waitFor(() => {
+        // Orders from June 10-20 should be visible
+        expect(screen.getByText('Bob Smith')).toBeInTheDocument() // June 10
+        expect(screen.getByText('Carol White')).toBeInTheDocument() // June 15
+        expect(screen.getByText('David Brown')).toBeInTheDocument() // June 20
+        // Orders outside range should be hidden
+        expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument() // June 1
+        expect(screen.queryByText('Eve Davis')).not.toBeInTheDocument() // June 30
+      })
+    })
+
+    it('displays single selected date in the button', async () => {
+      const { user } = render(
+        <DataTable columns={columnsWithDateFilter} data={testOrders} />,
+      )
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+      const datePickerButton = within(filterPopover).getByRole('button', {
+        name: /select date range/i,
+      })
+      await user.click(datePickerButton)
+
+      // Select a range
+      await selectDay(user, 10)
+
+      expect(datePickerButton).toHaveTextContent('Jun 10, 2024')
+    })
+
+    it('displays selected date range in the button', async () => {
+      const { user } = render(
+        <DataTable columns={columnsWithDateFilter} data={testOrders} />,
+      )
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+      const datePickerButton = within(filterPopover).getByRole('button', {
+        name: /select date range/i,
+      })
+      await user.click(datePickerButton)
+
+      // Select a range
+      await selectDay(user, 10)
+      await selectDay(user, 15)
+
+      expect(datePickerButton).toHaveTextContent('Jun 10, 2024 - Jun 15, 2024')
+    })
+
+    it('clears filter when clear button is clicked', async () => {
+      const { user } = render(
+        <DataTable
+          columns={columnsWithDateFilter}
+          data={testOrders}
+          pagination={{ pageSize: 10 }}
+        />,
+      )
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+      const datePickerButton = within(filterPopover).getByRole('button', {
+        name: /select date range/i,
+      })
+      await user.click(datePickerButton)
+
+      // Select a single date to filter
+      await selectDay(user, 15)
+
+      await waitFor(() => {
+        expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument()
+      })
+
+      // Click clear filter button
+      const clearButton = screen.getByRole('button', {
+        name: defaultDataTableLocale.columnHeader.clearFilter,
+      })
+      await user.click(clearButton)
+
+      await waitFor(() => {
+        // All orders should be visible again
+        expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+        expect(screen.getByText('Bob Smith')).toBeInTheDocument()
+        expect(screen.getByText('Carol White')).toBeInTheDocument()
+        expect(screen.getByText('David Brown')).toBeInTheDocument()
+        expect(screen.getByText('Eve Davis')).toBeInTheDocument()
+      })
+    })
+
+    it('shows empty state when no orders match date filter', async () => {
+      const { user } = render(
+        <DataTable columns={columnsWithDateFilter} data={testOrders} />,
+      )
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+      const datePickerButton = within(filterPopover).getByRole('button', {
+        name: /select date range/i,
+      })
+      await user.click(datePickerButton)
+
+      // Select a date with no orders (e.g., day 5)
+      await selectDay(user, 5)
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(defaultDataTableLocale.body.noResults),
+        ).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('DateRangeFilter Accessibility', () => {
+    it('date picker button should be accessible by role', async () => {
+      const { user } = render(
+        <DataTable columns={columnsWithDateFilter} data={testOrders} />,
+      )
+
+      await openFilterPopover(user, 'Created')
+
+      const filterPopover = screen.getByRole('dialog')
+
+      // The date picker trigger should be findable by role
+      // Note: If this test fails, add aria-label to DateRangeFilter button
+      const datePickerButton = within(filterPopover).getByRole('button', {
+        name: /select date range/i,
+      })
+      expect(datePickerButton).toBeInTheDocument()
     })
   })
 })

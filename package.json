@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "prepare": "husky",
     "registry:build": "shadcn build",
     "ci:version": "pnpm changeset version && pnpm registry:build",
