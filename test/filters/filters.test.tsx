@@ -1,6 +1,7 @@
 import { defaultDataTableLocale } from '@/registry/components/shadcntable/config/locale'
 import { DataTable } from '@/registry/components/shadcntable/data-table'
 import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
+import type { FilterComponentProps } from '@/registry/components/shadcntable/types/filters'
 import { render } from '@/vitest.utils'
 import { type ColumnDef } from '@tanstack/react-table'
 import { act, screen, waitFor, within } from '@testing-library/react'
@@ -930,6 +931,324 @@ describe('DataTable Multiple Filters Combined', () => {
         name: /select date range/i,
       })
       expect(datePickerButton).toBeInTheDocument()
+    })
+  })
+})
+
+describe('DataTable Custom Filter Integration', () => {
+  // Custom filter component for testing
+  const CustomFilterComponent = ({ value, onChange, onClear }: FilterComponentProps) => {
+    return (
+      <div data-testid='custom-filter'>
+        <input
+          type='text'
+          value={(value as string) || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder='Custom filter...'
+        />
+        <button onClick={onClear}>Clear Custom</button>
+      </div>
+    )
+  }
+
+  const columnsWithCustomFilter: ColumnDef<Product>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+      meta: {
+        filterConfig: {
+          title: 'Custom Filter',
+          variant: 'custom',
+          component: CustomFilterComponent,
+        },
+      },
+    },
+    {
+      accessorKey: 'category',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Category' />,
+    },
+  ]
+
+  const columnsWithCustomFilterNoComponent: ColumnDef<Product>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+      meta: {
+        filterConfig: {
+          title: 'Custom Filter Without Component',
+          variant: 'custom',
+          // No component provided
+        },
+      },
+    },
+  ]
+
+  it('renders custom filter component when variant is custom', async () => {
+    const { user } = render(
+      <DataTable columns={columnsWithCustomFilter} data={testProducts} />,
+    )
+
+    await openFilterPopover(user, 'Name')
+
+    // Custom filter should be rendered
+    expect(screen.getByTestId('custom-filter')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Custom filter...')).toBeInTheDocument()
+  })
+
+  it('custom filter interacts with table data', async () => {
+    const { user } = render(
+      <DataTable columns={columnsWithCustomFilter} data={testProducts} />,
+    )
+
+    await openFilterPopover(user, 'Name')
+
+    const customInput = screen.getByPlaceholderText('Custom filter...')
+    await user.type(customInput, 'Laptop')
+
+    // The filter value should be set (custom filters control their own filtering logic)
+    expect(customInput).toHaveValue('Laptop')
+  })
+
+  it('returns null when custom variant has no component', async () => {
+    const { user } = render(
+      <DataTable columns={columnsWithCustomFilterNoComponent} data={testProducts} />,
+    )
+
+    await openFilterPopover(user, 'Name')
+
+    // Should not find custom filter since component is not provided
+    expect(screen.queryByTestId('custom-filter')).not.toBeInTheDocument()
+  })
+
+  it('returns null when filter variant is unknown', async () => {
+    // Test with an unknown filter variant (should hit default case)
+    const columnsWithUnknownVariant: ColumnDef<Product>[] = [
+      {
+        accessorKey: 'name',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+        meta: {
+          filterConfig: {
+            title: 'Unknown Filter',
+            variant: 'unknown-variant' as 'text', // Cast to valid type to bypass TypeScript
+          },
+        },
+      },
+    ]
+
+    const { user } = render(
+      <DataTable columns={columnsWithUnknownVariant} data={testProducts} />,
+    )
+
+    await openFilterPopover(user, 'Name')
+
+    // Should not render any filter component (default case returns null)
+    // The popover should be open but without filter controls
+    const filterPopover = screen.getByRole('dialog')
+    expect(filterPopover).toBeInTheDocument()
+    // Within the filter popover, there should be no filter input controls
+    // (text filter would have a textbox with placeholder, select would have combobox)
+    expect(
+      within(filterPopover).queryByPlaceholderText(/search/i),
+    ).not.toBeInTheDocument()
+    expect(within(filterPopover).queryByRole('combobox')).not.toBeInTheDocument()
+  })
+})
+
+describe('DataTable Built-in Date Range Filter', () => {
+  // Test the built-in date-range filter from data-table.tsx (without custom filterFn)
+  // This tests lines 87-109 in data-table.tsx, especially line 106
+
+  // Column definition that uses the built-in date-range filter
+  const columnsWithBuiltinDateFilter: ColumnDef<Order>[] = [
+    {
+      accessorKey: 'customer',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Customer' />,
+    },
+    {
+      accessorKey: 'total',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Total' />,
+    },
+    {
+      accessorKey: 'createdAt',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Created' />,
+      cell: ({ row }) => {
+        const date = row.getValue<Date>('createdAt')
+        return date.toLocaleDateString()
+      },
+      meta: {
+        filterConfig: {
+          title: 'Filter by date',
+          variant: 'date-range',
+          placeholder: 'Select date range...',
+        },
+      },
+      // No custom filterFn - uses built-in from data-table.tsx
+    },
+  ]
+
+  beforeEach(() => {
+    // Set system date to June 15, 2024
+    vi.setSystemTime(new Date(2024, 5, 15))
+  })
+
+  it('filters by date range when from and to are both set', async () => {
+    const { user } = render(
+      <DataTable
+        columns={columnsWithBuiltinDateFilter}
+        data={testOrders}
+        pagination={{ pageSize: 10 }}
+      />,
+    )
+
+    // All orders visible initially
+    expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+    expect(screen.getByText('Carol White')).toBeInTheDocument()
+    expect(screen.getByText('Eve Davis')).toBeInTheDocument()
+
+    await openFilterPopover(user, 'Created')
+
+    const filterPopover = screen.getByRole('dialog')
+    const datePickerButton = within(filterPopover).getByRole('button', {
+      name: /select date range/i,
+    })
+    await user.click(datePickerButton)
+
+    // Select a date range (June 10 - June 20)
+    const getCalendar = () => screen.getAllByRole('grid')[0]
+    await user.click(getCalendar().querySelector("[data-day='6/10/2024']") as Element)
+    await user.click(getCalendar().querySelector("[data-day='6/20/2024']") as Element)
+
+    await waitFor(() => {
+      // Only orders in range should be visible
+      expect(screen.getByText('Bob Smith')).toBeInTheDocument() // June 10
+      expect(screen.getByText('Carol White')).toBeInTheDocument() // June 15
+      expect(screen.getByText('David Brown')).toBeInTheDocument() // June 20
+      // Orders outside range should be hidden
+      expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument() // June 1
+      expect(screen.queryByText('Eve Davis')).not.toBeInTheDocument() // June 30
+    })
+  })
+
+  it('shows all data when filter value is null/undefined', async () => {
+    // This tests the edge case where filterValue is falsy (undefined/null)
+    // which triggers line 93 in data-table.tsx (returns true, showing all data)
+    const { user } = render(
+      <DataTable
+        columns={columnsWithBuiltinDateFilter}
+        data={testOrders}
+        pagination={{ pageSize: 10 }}
+      />,
+    )
+
+    // All orders visible initially
+    expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+    expect(screen.getByText('Eve Davis')).toBeInTheDocument()
+
+    await openFilterPopover(user, 'Created')
+
+    const filterPopover = screen.getByRole('dialog')
+    const datePickerButton = within(filterPopover).getByRole('button', {
+      name: /select date range/i,
+    })
+    await user.click(datePickerButton)
+
+    // Select a date range
+    const getCalendar = () => screen.getAllByRole('grid')[0]
+    await user.click(getCalendar().querySelector("[data-day='6/10/2024']") as Element)
+    await user.click(getCalendar().querySelector("[data-day='6/15/2024']") as Element)
+
+    await waitFor(() => {
+      // Only filtered orders should be visible
+      expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument()
+    })
+
+    // Clear the filter using the clear button
+    const clearButton = screen.getByRole('button', {
+      name: defaultDataTableLocale.columnHeader.clearFilter,
+    })
+    await user.click(clearButton)
+
+    // After clearing, all orders should be visible again (filterValue is undefined)
+    await waitFor(() => {
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+      expect(screen.getByText('Bob Smith')).toBeInTheDocument()
+      expect(screen.getByText('Carol White')).toBeInTheDocument()
+      expect(screen.getByText('David Brown')).toBeInTheDocument()
+      expect(screen.getByText('Eve Davis')).toBeInTheDocument()
+    })
+  })
+
+  it('returns false for non-Date values in date column', async () => {
+    // Test with data that has invalid date value
+    const ordersWithInvalidDate = [
+      ...testOrders,
+      {
+        id: '6',
+        customer: 'Invalid Date User',
+        total: 100,
+        createdAt: 'not-a-date' as unknown as Date,
+      },
+    ]
+
+    // Create columns with a cell renderer that handles non-Date values
+    const columnsWithSafeDateFilter: ColumnDef<Order>[] = [
+      {
+        accessorKey: 'customer',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Customer' />
+        ),
+      },
+      {
+        accessorKey: 'total',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Total' />,
+      },
+      {
+        accessorKey: 'createdAt',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Created' />,
+        cell: ({ row }) => {
+          const date = row.getValue<Date>('createdAt')
+          // Handle non-Date values safely
+          if (date instanceof Date && !isNaN(date.getTime())) {
+            return date.toLocaleDateString()
+          }
+          return 'Invalid Date'
+        },
+        meta: {
+          filterConfig: {
+            title: 'Filter by date',
+            variant: 'date-range',
+            placeholder: 'Select date range...',
+          },
+        },
+      },
+    ]
+
+    const { user } = render(
+      <DataTable
+        columns={columnsWithSafeDateFilter}
+        data={ordersWithInvalidDate}
+        pagination={{ pageSize: 10 }}
+      />,
+    )
+
+    await openFilterPopover(user, 'Created')
+
+    const filterPopover = screen.getByRole('dialog')
+    const datePickerButton = within(filterPopover).getByRole('button', {
+      name: /select date range/i,
+    })
+    await user.click(datePickerButton)
+
+    // Select a date range
+    const getCalendar = () => screen.getAllByRole('grid')[0]
+    await user.click(getCalendar().querySelector("[data-day='6/1/2024']") as Element)
+    await user.click(getCalendar().querySelector("[data-day='6/30/2024']") as Element)
+
+    await waitFor(() => {
+      // Valid date orders should be visible
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+      // Invalid date row should be filtered out (returns false for non-Date)
+      expect(screen.queryByText('Invalid Date User')).not.toBeInTheDocument()
     })
   })
 })

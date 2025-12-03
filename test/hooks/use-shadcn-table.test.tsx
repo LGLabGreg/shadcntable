@@ -256,30 +256,6 @@ describe('useShadcnTable', () => {
     expect(result.current.getSelectedRowModel().rows).toHaveLength(0)
   })
 
-  it.skip('resets pagination when data changes', () => {
-    const { result, rerender } = renderHook(
-      ({ data }) =>
-        useShadcnTable({
-          data,
-          columns,
-          pageSize: 2,
-        }),
-      { initialProps: { data: testData } },
-    )
-
-    act(() => {
-      result.current.nextPage()
-    })
-
-    expect(result.current.getState().pagination.pageIndex).toBe(1)
-
-    // When data changes, the table should maintain its state
-    // unless explicitly reset
-    rerender({ data: testData.slice(0, 2) })
-
-    expect(result.current.getRowModel().rows).toHaveLength(2)
-  })
-
   it('returns correct page count', () => {
     const { result } = renderHook(() =>
       useShadcnTable({

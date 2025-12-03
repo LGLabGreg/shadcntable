@@ -3,7 +3,7 @@ import { DataTable } from '@/registry/components/shadcntable/data-table'
 import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
 import { render } from '@/vitest.utils'
 import { type ColumnDef } from '@tanstack/react-table'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 type TestUser = {
@@ -140,6 +140,96 @@ describe('DataTable with pagination', () => {
     expect(screen.queryByText('User 1')).not.toBeInTheDocument()
     expect(screen.getByText('User 11')).toBeInTheDocument()
   })
+
+  it('changes page size when selecting from dropdown', async () => {
+    const { user } = render(
+      <DataTable
+        columns={columns}
+        data={manyUsers}
+        pagination={{ pageSize: 10, pageSizeOptions: [10, 25, 50] }}
+      />,
+    )
+
+    // Initially should show 10 rows
+    let rows = screen.getAllByRole('row')
+    expect(rows).toHaveLength(11) // Header + 10 data rows
+
+    // Click the page size select trigger
+    const selectTrigger = screen.getByRole('combobox')
+    await user.click(selectTrigger)
+
+    // Select 25 rows per page
+    const option25 = screen.getByRole('option', { name: '25' })
+    await user.click(option25)
+
+    // Should now show 25 rows
+    rows = screen.getAllByRole('row')
+    expect(rows).toHaveLength(26) // Header + 25 data rows
+  })
+
+  it('navigates to first page when clicking first page button', async () => {
+    const { user } = render(
+      <DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 10 }} />,
+    )
+
+    // Go to page 2 first
+    const nextButton = screen.getByRole('button', { name: /next/i })
+    await user.click(nextButton)
+
+    expect(screen.getByText('User 11')).toBeInTheDocument()
+    expect(screen.queryByText('User 1')).not.toBeInTheDocument()
+
+    // Click first page button
+    const firstPageButton = screen.getByRole('button', {
+      name: defaultDataTableLocale.pagination.goToFirstPage,
+    })
+    await user.click(firstPageButton)
+
+    // Should be back on first page
+    expect(screen.getByText('User 1')).toBeInTheDocument()
+    expect(screen.queryByText('User 11')).not.toBeInTheDocument()
+  })
+
+  it('navigates to last page when clicking last page button', async () => {
+    const { user } = render(
+      <DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 10 }} />,
+    )
+
+    // Initially on first page
+    expect(screen.getByText('User 1')).toBeInTheDocument()
+
+    // Click last page button
+    const lastPageButton = screen.getByRole('button', {
+      name: defaultDataTableLocale.pagination.goToLastPage,
+    })
+    await user.click(lastPageButton)
+
+    // Should be on last page (users 21-25)
+    expect(screen.getByText('User 21')).toBeInTheDocument()
+    expect(screen.queryByText('User 1')).not.toBeInTheDocument()
+  })
+
+  it('navigates to previous page when clicking previous page button', async () => {
+    const { user } = render(
+      <DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 10 }} />,
+    )
+
+    // Go to page 2 first
+    const nextButton = screen.getByRole('button', { name: /next/i })
+    await user.click(nextButton)
+
+    expect(screen.getByText('User 11')).toBeInTheDocument()
+
+    // Click previous page button
+    const prevButton = screen.getByRole('button', {
+      name: defaultDataTableLocale.pagination.goToPreviousPage,
+    })
+    await user.click(prevButton)
+
+    // Should be back on first page
+    expect(screen.getByText('User 1')).toBeInTheDocument()
+    expect(screen.queryByText('User 11')).not.toBeInTheDocument()
+  })
 })
 
 describe('DataTable with row selection', () => {
@@ -214,5 +304,240 @@ describe('DataTable localization', () => {
     )
 
     expect(screen.getByText('Keine Ergebnisse')).toBeInTheDocument()
+  })
+})
+
+describe('DataTable Toolbar', () => {
+  it('filters data globally when typing in search input', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    // All users should be visible initially
+    expect(screen.getByText('John Doe')).toBeInTheDocument()
+    expect(screen.getByText('Jane Smith')).toBeInTheDocument()
+    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
+
+    // Find the search input by placeholder
+    const searchInput = screen.getByPlaceholderText(
+      defaultDataTableLocale.toolbar.searchPlaceholder,
+    )
+    await user.type(searchInput, 'John')
+
+    // Only John Doe and Bob Johnson should be visible (both contain "John")
+    expect(screen.getByText('John Doe')).toBeInTheDocument()
+    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
+    expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument()
+  })
+
+  it('shows no results when global search matches nothing', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    const searchInput = screen.getByPlaceholderText(
+      defaultDataTableLocale.toolbar.searchPlaceholder,
+    )
+    await user.type(searchInput, 'XYZ123')
+
+    expect(screen.getByText(defaultDataTableLocale.body.noResults)).toBeInTheDocument()
+  })
+
+  it('clears global search and shows all data', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    const searchInput = screen.getByPlaceholderText(
+      defaultDataTableLocale.toolbar.searchPlaceholder,
+    )
+    await user.type(searchInput, 'John')
+
+    expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument()
+
+    await user.clear(searchInput)
+
+    expect(screen.getByText('Jane Smith')).toBeInTheDocument()
+    expect(screen.getByText('John Doe')).toBeInTheDocument()
+    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
+  })
+})
+
+describe('DataTable View Options', () => {
+  it('toggles column visibility via view options dropdown', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    // Email column should be visible initially
+    expect(screen.getByText('Email')).toBeInTheDocument()
+    expect(screen.getByText('john@example.com')).toBeInTheDocument()
+
+    // Open view options dropdown
+    const viewButton = screen.getByRole('button', {
+      name: defaultDataTableLocale.viewOptions.view,
+    })
+    await user.click(viewButton)
+
+    // Find the email checkbox and uncheck it
+    const emailCheckbox = screen.getByRole('menuitemcheckbox', { name: /email/i })
+    await user.click(emailCheckbox)
+
+    // Email column should now be hidden
+    expect(screen.queryByText('Email')).not.toBeInTheDocument()
+    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument()
+
+    // Other columns should still be visible
+    expect(screen.getByText('Name')).toBeInTheDocument()
+    expect(screen.getByText('Age')).toBeInTheDocument()
+  })
+
+  it('shows column again when checkbox is re-checked', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    // Open view options dropdown and hide email column
+    const viewButton = screen.getByRole('button', {
+      name: defaultDataTableLocale.viewOptions.view,
+    })
+    await user.click(viewButton)
+
+    const emailCheckbox = screen.getByRole('menuitemcheckbox', { name: /email/i })
+    await user.click(emailCheckbox)
+
+    // Email should be hidden
+    expect(screen.queryByText('Email')).not.toBeInTheDocument()
+
+    // Re-open dropdown and re-check email
+    await user.click(viewButton)
+    const emailCheckboxAgain = screen.getByRole('menuitemcheckbox', { name: /email/i })
+    await user.click(emailCheckboxAgain)
+
+    // Email column should be visible again
+    expect(screen.getByText('Email')).toBeInTheDocument()
+    expect(screen.getByText('john@example.com')).toBeInTheDocument()
+  })
+})
+
+describe('DataTable Column Header', () => {
+  // Columns with sorting disabled and no filter
+  const columnsWithoutSortAndFilter: ColumnDef<TestUser>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'email',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
+    },
+  ]
+
+  it('renders just title text when column cannot sort and has no filter', () => {
+    render(<DataTable columns={columnsWithoutSortAndFilter} data={testData} />)
+
+    // The Name column header should just be plain text without sorting controls
+    const nameHeader = screen.getByText('Name').closest('th')
+    // Should not have sort button in name column (since enableSorting: false and no filter)
+    expect(
+      within(nameHeader!).queryByRole('button', {
+        name: defaultDataTableLocale.columnHeader.sortMenuLabel,
+      }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('sorts ascending when clicking sort ascending menu item', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    // Open sort dropdown for Name column
+    const nameHeader = screen.getByText('Name').closest('th')
+    const sortButton = within(nameHeader!).getByRole('button', {
+      name: defaultDataTableLocale.columnHeader.sortMenuLabel,
+    })
+    await user.click(sortButton)
+
+    // Click sort ascending
+    const sortAscItem = screen.getByRole('menuitem', {
+      name: defaultDataTableLocale.columnHeader.sortAscending,
+    })
+    await user.click(sortAscItem)
+
+    // Check data is sorted ascending (Bob, Jane, John)
+    const rows = screen.getAllByRole('row')
+    expect(within(rows[1]).getByText('Bob Johnson')).toBeInTheDocument()
+    expect(within(rows[2]).getByText('Jane Smith')).toBeInTheDocument()
+    expect(within(rows[3]).getByText('John Doe')).toBeInTheDocument()
+  })
+
+  it('sorts descending when clicking sort descending menu item', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    // Open sort dropdown for Name column
+    const nameHeader = screen.getByText('Name').closest('th')
+    const sortButton = within(nameHeader!).getByRole('button', {
+      name: defaultDataTableLocale.columnHeader.sortMenuLabel,
+    })
+    await user.click(sortButton)
+
+    // Click sort descending
+    const sortDescItem = screen.getByRole('menuitem', {
+      name: defaultDataTableLocale.columnHeader.sortDescending,
+    })
+    await user.click(sortDescItem)
+
+    // Check data is sorted descending (John, Jane, Bob)
+    const rows = screen.getAllByRole('row')
+    expect(within(rows[1]).getByText('John Doe')).toBeInTheDocument()
+    expect(within(rows[2]).getByText('Jane Smith')).toBeInTheDocument()
+    expect(within(rows[3]).getByText('Bob Johnson')).toBeInTheDocument()
+  })
+
+  it('clears sorting when clicking clear sorting menu item', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    // First, sort ascending
+    const nameHeader = screen.getByText('Name').closest('th')
+    const sortButton = within(nameHeader!).getByRole('button', {
+      name: defaultDataTableLocale.columnHeader.sortMenuLabel,
+    })
+    await user.click(sortButton)
+
+    const sortAscItem = screen.getByRole('menuitem', {
+      name: defaultDataTableLocale.columnHeader.sortAscending,
+    })
+    await user.click(sortAscItem)
+
+    // Verify sorted
+    let rows = screen.getAllByRole('row')
+    expect(within(rows[1]).getByText('Bob Johnson')).toBeInTheDocument()
+
+    // Open dropdown again and clear sorting
+    await user.click(sortButton)
+    const clearSortItem = screen.getByRole('menuitem', {
+      name: defaultDataTableLocale.columnHeader.clearSorting,
+    })
+    await user.click(clearSortItem)
+
+    // Data should be back to original order
+    rows = screen.getAllByRole('row')
+    expect(within(rows[1]).getByText('John Doe')).toBeInTheDocument()
+    expect(within(rows[2]).getByText('Jane Smith')).toBeInTheDocument()
+    expect(within(rows[3]).getByText('Bob Johnson')).toBeInTheDocument()
+  })
+
+  it('hides column when clicking hide column menu item', async () => {
+    const { user } = render(<DataTable columns={columns} data={testData} />)
+
+    // Verify Email column is visible
+    expect(screen.getByText('Email')).toBeInTheDocument()
+    expect(screen.getByText('john@example.com')).toBeInTheDocument()
+
+    // Open sort dropdown for Email column
+    const emailHeader = screen.getByText('Email').closest('th')
+    const sortButton = within(emailHeader!).getByRole('button', {
+      name: defaultDataTableLocale.columnHeader.sortMenuLabel,
+    })
+    await user.click(sortButton)
+
+    // Click hide column
+    const hideColumnItem = screen.getByRole('menuitem', {
+      name: defaultDataTableLocale.columnHeader.hideColumn,
+    })
+    await user.click(hideColumnItem)
+
+    // Email column should now be hidden
+    expect(screen.queryByText('Email')).not.toBeInTheDocument()
+    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument()
   })
 })
