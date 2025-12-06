@@ -10,11 +10,9 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
       <Navbar className='border-b' />
       <SidebarProvider defaultOpen>
         <AppSidebar />
-        <SidebarInset>
-          <main className='container mx-auto px-5 py-10 min-w-0'>
-            <SidebarTrigger className='mb-4 md:hidden' />
-            {children}
-          </main>
+        <SidebarInset className='min-w-0'>
+          <SidebarTrigger className='mb-4 md:hidden' />
+          {children}
         </SidebarInset>
       </SidebarProvider>
     </div>

@@ -64,7 +64,7 @@ export default async function DocPage(props: { params: Promise<{ slug: string[] 
   }
 
   return (
-    <div className='flex gap-10 xl:gap-14'>
+    <div className='flex min-w-0 w-full gap-10 xl:gap-14 p-6 lg:p-8'>
       <div className='min-w-0 flex-1'>
         <div className='mb-6 space-y-2'>
           <h1 className='scroll-m-20 text-4xl font-semibold tracking-tight sm:text-3xl xl:text-4xl'>
