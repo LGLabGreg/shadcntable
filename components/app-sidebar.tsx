@@ -39,6 +39,15 @@ const navigation: NavigationSectionItem[] = [
     items: [{ title: 'DataTable', href: '/docs/components/data-table' }],
   },
   {
+    title: 'Examples',
+    items: [
+      {
+        title: 'Manual Pagination',
+        href: '/docs/examples/data-table-manual-pagination',
+      },
+    ],
+  },
+  {
     title: 'Help',
     items: [
       {

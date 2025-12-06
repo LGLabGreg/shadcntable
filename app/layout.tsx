@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Geist_Mono, Inter } from 'next/font/google'
 import Script from 'next/script'
 
-import { BetaBanner } from '@/components/beta-banner'
 import { ThemeProvider } from '@/components/theme-provider'
 
 import { IS_PRODUCTION, siteConfig } from '@/lib/config'
@@ -79,7 +78,6 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <BetaBanner />
           {children}
         </ThemeProvider>
         {IS_PRODUCTION && (

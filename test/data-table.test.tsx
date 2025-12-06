@@ -230,6 +230,51 @@ describe('DataTable with pagination', () => {
     expect(screen.getByText('User 1')).toBeInTheDocument()
     expect(screen.queryByText('User 11')).not.toBeInTheDocument()
   })
+
+  it('supports manual/server-side pagination with onPaginationChange', async () => {
+    const handlePaginationChange = vi.fn()
+
+    const { user, rerender } = render(
+      <DataTable
+        columns={columns}
+        data={manyUsers.slice(0, 10)}
+        pagination={{
+          manual: true,
+          pageIndex: 0,
+          pageSize: 10,
+          rowCount: manyUsers.length,
+          onPaginationChange: handlePaginationChange,
+        }}
+      />,
+    )
+
+    // Initially on first page
+    expect(screen.getByText('User 1')).toBeInTheDocument()
+    expect(screen.queryByText('User 11')).not.toBeInTheDocument()
+
+    const nextButton = screen.getByRole('button', { name: /next/i })
+    await user.click(nextButton)
+
+    expect(handlePaginationChange).toHaveBeenCalledWith({ pageIndex: 1, pageSize: 10 })
+
+    // Simulate consumer updating external state and providing new page data
+    rerender(
+      <DataTable
+        columns={columns}
+        data={manyUsers.slice(10, 20)}
+        pagination={{
+          manual: true,
+          pageIndex: 1,
+          pageSize: 10,
+          rowCount: manyUsers.length,
+          onPaginationChange: handlePaginationChange,
+        }}
+      />,
+    )
+
+    expect(screen.getByText('User 11')).toBeInTheDocument()
+    expect(screen.queryByText('User 1')).not.toBeInTheDocument()
+  })
 })
 
 describe('DataTable with row selection', () => {

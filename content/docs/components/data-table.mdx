@@ -138,6 +138,30 @@ Configure pagination using the `pagination` prop:
       default: '[10, 25, 50]',
       description: 'Available page size options',
     },
+    {
+      name: 'manual',
+      type: 'boolean',
+      description:
+        'Enable manual/server-side pagination. When true, pagination state and data are controlled externally.',
+    },
+    {
+      name: 'pageIndex',
+      type: 'number',
+      description:
+        'Externally controlled current page index (0-based) when using manual pagination.',
+    },
+    {
+      name: 'rowCount',
+      type: 'number',
+      description:
+        'Total number of rows across all pages when using manual pagination. Used with `pageSize` to compute the total page count.',
+    },
+    {
+      name: 'onPaginationChange',
+      type: '({ pageIndex: number; pageSize: number }) => void',
+      description:
+        'Single callback fired whenever pagination state changes (page index or page size) in manual mode.',
+    },
   ]}
 />
 

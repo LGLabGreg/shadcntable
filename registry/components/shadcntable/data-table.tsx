@@ -47,6 +47,19 @@ export function DataTable<TData, TValue>({
   toolbar,
 }: DataTableProps<TData, TValue>) {
   'use no memo'
+  const isManualPagination =
+    pagination?.manual === true && typeof pagination.onPaginationChange === 'function'
+
+  const manualPagination = isManualPagination
+    ? {
+        manual: true,
+        pageIndex: pagination.pageIndex ?? 0,
+        pageSize: pagination.pageSize ?? pagination.pageSizeOptions?.[0] ?? 10,
+        rowCount: pagination.rowCount,
+        onPaginationChange: pagination.onPaginationChange,
+      }
+    : undefined
+
   const mergedLocale = useMemo(() => {
     return {
       body: { ...defaultDataTableLocale.body, ...locale?.body },
@@ -116,6 +129,7 @@ export function DataTable<TData, TValue>({
     columns: prepareColumns,
     pageSize: pagination?.pageSize,
     rowSelectionConfig: rowSelection,
+    manualPagination,
   })
 
   return (
