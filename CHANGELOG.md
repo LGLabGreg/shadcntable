@@ -1,5 +1,11 @@
 # shadcntable
 
+## 0.2.0
+
+### Minor Changes
+
+- [#17](https://github.com/LGLabGreg/shadcntable/pull/17) [`2d80390`](https://github.com/LGLabGreg/shadcntable/commit/2d80390cb6696d8be9bb9af53a849d2485ef9bf3) Thanks [@LGLabGreg](https://github.com/LGLabGreg)! - Feat: manual pagination
+
 ## 0.1.5
 
 ### Patch Changes
