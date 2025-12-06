@@ -102,6 +102,61 @@ describe('DataTable', () => {
   })
 })
 
+describe('DataTable with isFetching', () => {
+  it('shows overlay with spinner when isFetching is true', () => {
+    render(<DataTable columns={columns} data={testData} isFetching />)
+
+    // Spinner should be present (has role="status" and aria-label="Loading")
+    const spinner = screen.getByRole('status', { name: 'Loading' })
+    expect(spinner).toBeInTheDocument()
+  })
+
+  it('keeps existing rows visible when isFetching is true', () => {
+    render(<DataTable columns={columns} data={testData} isFetching />)
+
+    // Existing rows should still be visible
+    expect(screen.getByText('John Doe')).toBeInTheDocument()
+    expect(screen.getByText('Jane Smith')).toBeInTheDocument()
+    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
+  })
+
+  it('does not show overlay when isFetching is false', () => {
+    render(<DataTable columns={columns} data={testData} isFetching={false} />)
+
+    // Overlay should not be present
+    const overlay = document.querySelector('.absolute.inset-0.top-10')
+    expect(overlay).not.toBeInTheDocument()
+  })
+
+  it('shows skeleton rows when isLoading is true, even with isFetching', () => {
+    render(<DataTable columns={columns} data={[]} isLoading isFetching />)
+
+    // Should show skeleton rows (isLoading takes precedence for empty data)
+    expect(
+      screen.queryByText(defaultDataTableLocale.body.noResults),
+    ).not.toBeInTheDocument()
+
+    // Should not show actual data rows
+    expect(screen.queryByText('John Doe')).not.toBeInTheDocument()
+  })
+
+  it('isLoading takes precedence over isFetching - shows skeletons when isLoading is true', () => {
+    render(<DataTable columns={columns} data={testData} isLoading isFetching />)
+
+    // Should show skeleton rows (isLoading returns early)
+    expect(
+      screen.queryByText(defaultDataTableLocale.body.noResults),
+    ).not.toBeInTheDocument()
+
+    // Should not show actual data rows
+    expect(screen.queryByText('John Doe')).not.toBeInTheDocument()
+
+    // Overlay should not be present because isLoading returns early
+    const overlay = document.querySelector('.absolute.inset-0.top-10')
+    expect(overlay).not.toBeInTheDocument()
+  })
+})
+
 describe('DataTable with pagination', () => {
   const manyUsers: TestUser[] = Array.from({ length: 25 }, (_, i) => ({
     id: String(i + 1),

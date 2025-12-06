@@ -78,6 +78,12 @@ The main `DataTable` component accepts the following props:
       description: 'Shows loading skeleton when true',
     },
     {
+      name: 'isFetching',
+      type: 'boolean',
+      default: 'false',
+      description: 'Shows overlay with spinner over existing rows when fetching data',
+    },
+    {
       name: 'locale',
       type: 'Partial<DataTableLocale>',
       description: 'Override default text strings for internationalization',
@@ -444,6 +450,55 @@ const [isLoading, setIsLoading] = useState(true)
   isLoading={isLoading}
 />
 ```
+
+## Fetching State
+
+Use `isFetching` to show an overlay with a spinner over existing rows when fetching new data. This is useful for background updates where you want to keep the current data visible while fetching updates.
+
+The key difference:
+
+- `isLoading`: Shows skeleton rows (use for initial load when there's no data)
+- `isFetching`: Shows overlay with spinner over existing rows (use for background updates)
+
+Example with React Query:
+
+```tsx
+import { useQuery } from '@tanstack/react-query'
+
+function UsersTable() {
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['users', pagination],
+    queryFn: async () => {
+      const res = await fetch(`/api/users?page=${pagination.pageIndex + 1}`)
+      return res.json()
+    },
+    placeholderData: keepPreviousData,
+  })
+
+  return (
+    <DataTable
+      columns={columns}
+      data={data?.rows ?? []}
+      isLoading={isLoading}
+      isFetching={isFetching}
+      pagination={{
+        manual: true,
+        pageIndex: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        rowCount: data?.rowCount ?? 0,
+        onPaginationChange: setPagination,
+      }}
+    />
+  )
+}
+```
+
+When paginating or filtering, `isFetching` will show a semi-transparent overlay with a spinner, allowing users to see the current data while new data loads.
 
 ## Custom Empty State
 
