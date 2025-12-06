@@ -1,5 +1,11 @@
 # shadcntable
 
+## 0.1.5
+
+### Patch Changes
+
+- [#15](https://github.com/LGLabGreg/shadcntable/pull/15) [`4382d52`](https://github.com/LGLabGreg/shadcntable/commit/4382d52971cc87e79dc462069df16f004c4c8133) Thanks [@LGLabGreg](https://github.com/LGLabGreg)! - Fix row selection showing without config
+
 ## 0.1.4
 
 ### Patch Changes
