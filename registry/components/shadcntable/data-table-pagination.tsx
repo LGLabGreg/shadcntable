@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 
 import { useDataTableLocale } from './contexts/data-table-locale-context'
+import { type DataTableRowSelectionConfig } from './data-table-row-selection'
 
 export interface DataTablePaginationConfig {
   enabled?: boolean
@@ -20,11 +21,13 @@ export interface DataTablePaginationConfig {
 
 interface DataTablePaginationProps<TData> {
   config?: DataTablePaginationConfig
+  rowSelection?: DataTableRowSelectionConfig<TData>
   table: Table<TData>
 }
 
 export function DataTablePagination<TData>({
   config,
+  rowSelection,
   table,
 }: DataTablePaginationProps<TData>) {
   'use no memo'
@@ -34,12 +37,14 @@ export function DataTablePagination<TData>({
   if (!enabled) return null
 
   return (
-    <div className='flex items-center justify-between px-2'>
-      <div className='text-muted-foreground flex-1 text-sm'>
-        {table.getFilteredSelectedRowModel().rows.length} of{' '}
-        {table.getFilteredRowModel().rows.length} {locale.pagination.rowsSelected}
-      </div>
-      <div className='flex items-center space-x-4'>
+    <div className='flex items-center px-2'>
+      {rowSelection && (
+        <div className='text-muted-foreground flex-1 text-sm'>
+          {table.getFilteredSelectedRowModel().rows.length} of{' '}
+          {table.getFilteredRowModel().rows.length} {locale.pagination.rowsSelected}
+        </div>
+      )}
+      <div className='flex items-center space-x-4 ml-auto'>
         <div className='flex items-center space-x-2'>
           <p className='text-sm font-medium'>{locale.pagination.rowsPerPage}</p>
           <Select

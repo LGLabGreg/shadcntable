@@ -150,7 +150,6 @@ Enable row selection with checkboxes:
   columns={columns}
   data={data}
   rowSelection={{
-    enableRowSelection: true,
     onRowSelectionChange: (selectedRows) => {
       console.log('Selected:', selectedRows)
     },
@@ -179,7 +178,7 @@ You can also conditionally enable selection per row:
   data={[
     {
       name: 'enableRowSelection',
-      type: 'boolean | ((row: Row<TData>) => boolean)',
+      type: '((row: Row<TData>) => boolean)',
       description: 'Enable selection globally or per-row',
     },
     {
@@ -750,7 +749,6 @@ export function UsersTable() {
         pageSizeOptions: [10, 25, 50],
       }}
       rowSelection={{
-        enableRowSelection: true,
         onRowSelectionChange: (rows) => console.log('Selected:', rows),
       }}
       toolbar={{
