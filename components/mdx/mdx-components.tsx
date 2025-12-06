@@ -1,7 +1,9 @@
 import Image from 'next/image'
 import { Children, isValidElement } from 'react'
 
+import { ManualPaginationDemo } from '@/components/manual-pagination-demo'
 import { CodeBlock } from '@/components/mdx/code-block'
+import { ComponentPreview } from '@/components/mdx/component-preview'
 import { PropsTable } from '@/components/mdx/props-table'
 import { Tip } from '@/components/mdx/tip'
 
@@ -208,6 +210,10 @@ export function createMdxComponents() {
     Tip: ({ className, ...props }: React.ComponentProps<typeof Tip>) => (
       <Tip className={className} {...props} />
     ),
+    ComponentPreview: (props: React.ComponentProps<typeof ComponentPreview>) => (
+      <ComponentPreview {...props} />
+    ),
+    ManualPaginationDemo,
     PropsTable,
   }
 }

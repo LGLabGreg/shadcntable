@@ -1,17 +1,3 @@
----
-title: DataTable Manual Pagination Example
-description: Example of manual/server-side pagination using the DataTable component with rowCount.
----
-
-## Overview
-
-This example shows how to use the DataTable with **manual/server-side pagination**.
-The table controls (next/previous page, page size selector) are fully wired to an external pagination state and a data-fetching function, similar to the TanStack Table
-[controlled pagination example](https://tanstack.com/table/v8/docs/framework/react/examples/pagination-controlled).
-
-## Example: Users table with server-side pagination
-
-```tsx
 'use client'
 
 import { DataTable } from '@/registry/components/shadcntable/data-table'
@@ -108,21 +94,3 @@ function ManualPaginationTable() {
     />
   )
 }
-```
-
-You can adapt this pattern to any backend or data source:
-
-- **`pagination` state** lives in your component.
-- The **query function** uses `pageIndex` and `pageSize` to fetch the current page and return `rows` plus `rowCount`.
-- The DataTable runs in **manual mode** and calls your single `onPaginationChange` callback whenever the user changes page or page size.
-
-## Live demo
-
-Below is a live example using a generated dataset and the same **manual pagination** API as above.
-
-<ComponentPreview
-  title='Manual pagination with rowCount'
-  description='This demo uses manual/server-side pagination with a larger dataset to show real paging behavior.'
->
-  <ManualPaginationDemo />
-</ComponentPreview>
