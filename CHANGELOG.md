@@ -1,5 +1,11 @@
 # shadcntable
 
+## 0.3.0
+
+### Minor Changes
+
+- [#19](https://github.com/LGLabGreg/shadcntable/pull/19) [`2c50c24`](https://github.com/LGLabGreg/shadcntable/commit/2c50c241c840fee465c38febd62af351a87bcd6a) Thanks [@LGLabGreg](https://github.com/LGLabGreg)! - Add isFetching option
+
 ## 0.2.0
 
 ### Minor Changes
