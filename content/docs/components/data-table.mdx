@@ -138,6 +138,30 @@ Configure pagination using the `pagination` prop:
       default: '[10, 25, 50]',
       description: 'Available page size options',
     },
+    {
+      name: 'manual',
+      type: 'boolean',
+      description:
+        'Enable manual/server-side pagination. When true, pagination state and data are controlled externally.',
+    },
+    {
+      name: 'pageIndex',
+      type: 'number',
+      description:
+        'Externally controlled current page index (0-based) when using manual pagination.',
+    },
+    {
+      name: 'rowCount',
+      type: 'number',
+      description:
+        'Total number of rows across all pages when using manual pagination. Used with `pageSize` to compute the total page count.',
+    },
+    {
+      name: 'onPaginationChange',
+      type: '({ pageIndex: number; pageSize: number }) => void',
+      description:
+        'Single callback fired whenever pagination state changes (page index or page size) in manual mode.',
+    },
   ]}
 />
 
@@ -492,6 +516,90 @@ Override all text strings in the DataTable using the `locale` prop. You can over
     },
   }}
 />
+```
+
+## Examples
+
+### Manual / server-side pagination
+
+You can use the DataTable with server-side data and controlled pagination, following the same pattern as the TanStack Table
+[controlled pagination example](https://tanstack.com/table/v8/docs/framework/react/examples/pagination-controlled).
+
+```tsx
+'use client'
+
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { type ColumnDef } from '@tanstack/react-table'
+
+import { DataTable } from '@/components/shadcntable/data-table'
+import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
+
+type User = {
+  id: string
+  name: string
+  email: string
+}
+
+type UsersResponse = {
+  rows: User[]
+  rowCount: number
+}
+
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+  },
+  {
+    accessorKey: 'email',
+    header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
+  },
+]
+
+async function fetchUsers(pagination: { pageIndex: number; pageSize: number }) {
+  const params = new URLSearchParams({
+    page: String(pagination.pageIndex + 1),
+    pageSize: String(pagination.pageSize),
+  })
+
+  const res = await fetch(`/api/users?${params.toString()}`)
+  if (!res.ok) {
+    throw new Error('Failed to fetch users')
+  }
+
+  return (await res.json()) as UsersResponse
+}
+
+export function UsersTableServerSide() {
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['users', pagination],
+    queryFn: () => fetchUsers(pagination),
+    placeholderData: keepPreviousData,
+  })
+
+  const rows = data?.rows ?? []
+  const rowCount = data?.rowCount ?? 0
+
+  return (
+    <DataTable
+      columns={columns}
+      data={rows}
+      isLoading={isLoading}
+      pagination={{
+        manual: true,
+        pageIndex: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        rowCount,
+        onPaginationChange: setPagination,
+      }}
+    />
+  )
+}
 ```
 
 You can also override only specific strings:

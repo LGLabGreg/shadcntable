@@ -285,4 +285,42 @@ describe('useShadcnTable', () => {
     expect(result.current.getCanPreviousPage()).toBe(true)
     expect(result.current.getCanNextPage()).toBe(false)
   })
+
+  it('supports manual pagination with external state', () => {
+    const onPaginationChange = vi.fn()
+
+    const { result, rerender } = renderHook(
+      ({ pageIndex, pageSize }: { pageIndex: number; pageSize: number }) =>
+        useShadcnTable({
+          data: testData,
+          columns,
+          manualPagination: {
+            manual: true,
+            pageIndex,
+            pageSize,
+            rowCount: 50,
+            onPaginationChange,
+          },
+        }),
+      {
+        initialProps: { pageIndex: 0, pageSize: 10 },
+      },
+    )
+
+    // Uses external pagination state
+    expect(result.current.getState().pagination).toEqual({ pageIndex: 0, pageSize: 10 })
+
+    // Trigger a pagination change
+    act(() => {
+      result.current.nextPage()
+    })
+
+    expect(onPaginationChange).toHaveBeenCalledWith({ pageIndex: 1, pageSize: 10 })
+
+    // Simulate consumer updating external state
+    rerender({ pageIndex: 1, pageSize: 10 })
+
+    expect(result.current.getState().pagination).toEqual({ pageIndex: 1, pageSize: 10 })
+    expect(result.current.getPageCount()).toBe(5)
+  })
 })

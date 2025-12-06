@@ -17,6 +17,24 @@ export interface DataTablePaginationConfig {
   enabled?: boolean
   pageSize?: number
   pageSizeOptions?: number[]
+  /**
+   * Enables manual/server-side pagination.
+   * When true, pagination state and data are controlled externally.
+   */
+  manual?: boolean
+  /**
+   * Externally controlled current page index (0-based) in manual mode.
+   */
+  pageIndex?: number
+  /**
+   * Total number of rows across all pages in manual mode.
+   * Used together with `pageSize` to compute the total page count.
+   */
+  rowCount?: number
+  /**
+   * Single callback fired whenever pagination state changes (page index or page size).
+   */
+  onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void
 }
 
 interface DataTablePaginationProps<TData> {
