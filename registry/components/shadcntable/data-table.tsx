@@ -133,7 +133,11 @@ export function DataTable<TData, TValue>({
             />
           </Table>
         </div>
-        <DataTablePagination config={pagination} table={table} />
+        <DataTablePagination
+          config={pagination}
+          rowSelection={rowSelection}
+          table={table}
+        />
       </div>
     </DataTableLocaleProvider>
   )

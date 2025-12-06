@@ -174,7 +174,7 @@ describe('useShadcnTable', () => {
         data: testData,
         columns,
         rowSelectionConfig: {
-          enableRowSelection: true,
+          onRowSelectionChange: vi.fn(),
         },
       }),
     )
@@ -196,7 +196,6 @@ describe('useShadcnTable', () => {
         data: testData,
         columns,
         rowSelectionConfig: {
-          enableRowSelection: true,
           onRowSelectionChange: handleSelectionChange,
         },
       }),
@@ -217,7 +216,6 @@ describe('useShadcnTable', () => {
         data: testData,
         columns,
         rowSelectionConfig: {
-          enableRowSelection: true,
           onRowSelectionChange: handleSelectionChange,
         },
       }),
@@ -238,7 +236,7 @@ describe('useShadcnTable', () => {
         data: testData,
         columns,
         rowSelectionConfig: {
-          enableRowSelection: true,
+          onRowSelectionChange: vi.fn(),
         },
       }),
     )

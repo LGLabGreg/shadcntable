@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useDataTableLocale } from './contexts/data-table-locale-context'
 
 export interface DataTableRowSelectionConfig<TData> {
-  enableRowSelection?: boolean | ((row: Row<TData>) => boolean)
+  enableRowSelection?: (row: Row<TData>) => boolean
   onRowSelectionChange?: (selectedRows: TData[]) => void
 }
 

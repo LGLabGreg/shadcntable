@@ -238,7 +238,7 @@ describe('DataTable with row selection', () => {
       <DataTable
         columns={columns}
         data={testData}
-        rowSelection={{ enableRowSelection: true }}
+        rowSelection={{ onRowSelectionChange: vi.fn() }}
       />,
     )
 
@@ -255,7 +255,6 @@ describe('DataTable with row selection', () => {
         columns={columns}
         data={testData}
         rowSelection={{
-          enableRowSelection: true,
           onRowSelectionChange: handleSelectionChange,
         }}
       />,
@@ -276,7 +275,6 @@ describe('DataTable with row selection', () => {
         columns={columns}
         data={testData}
         rowSelection={{
-          enableRowSelection: true,
           onRowSelectionChange: handleSelectionChange,
         }}
       />,
