@@ -4,6 +4,7 @@ import { type ColumnDef, type FilterFnOption, type Row } from '@tanstack/react-t
 import { isAfter, isBefore, isDate, isSameDay } from 'date-fns'
 import { useMemo } from 'react'
 
+import { Spinner } from '@/components/ui/spinner'
 import { Table } from '@/components/ui/table'
 
 import { defaultDataTableLocale } from './config/locale'
@@ -28,6 +29,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   emptyState?: DataTableBodyProps<TData>['emptyState']
   isLoading?: boolean
+  isFetching?: boolean
   locale?: Partial<DataTableLocale>
   onRowClick?: (row: TData) => void
   pagination?: DataTablePaginationConfig
@@ -40,6 +42,7 @@ export function DataTable<TData, TValue>({
   data,
   emptyState,
   isLoading,
+  isFetching,
   locale,
   onRowClick,
   pagination,
@@ -136,7 +139,7 @@ export function DataTable<TData, TValue>({
     <DataTableLocaleProvider locale={mergedLocale}>
       <div className='space-y-4'>
         <DataTableToolbar config={toolbar} isLoading={isLoading} table={table} />
-        <div className='overflow-hidden rounded-md border'>
+        <div className='relative overflow-hidden rounded-md border'>
           <Table>
             <DataTableHeader table={table} />
             <DataTableBody
@@ -146,6 +149,11 @@ export function DataTable<TData, TValue>({
               table={table}
             />
           </Table>
+          {isFetching && !isLoading && (
+            <div className='absolute inset-0 top-10 z-10 flex items-center justify-center'>
+              <Spinner />
+            </div>
+          )}
         </div>
         <DataTablePagination
           config={pagination}

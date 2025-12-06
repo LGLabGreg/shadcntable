@@ -38,7 +38,16 @@ const columns: ColumnDef<Person>[] = [
 ]
 
 export function ManualPaginationDemo() {
-  const [queryClient] = useState(() => new QueryClient())
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 10000,
+          },
+        },
+      }),
+  )
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -53,7 +62,7 @@ function ManualPaginationTable() {
     pageSize: 10,
   })
 
-  const { data, isLoading } = useQuery<UsersApiResponse>({
+  const { data, isLoading, isFetching } = useQuery<UsersApiResponse>({
     queryKey: ['users', pagination],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -79,6 +88,7 @@ function ManualPaginationTable() {
       columns={columns}
       data={rows}
       isLoading={isLoading}
+      isFetching={isFetching}
       pagination={{
         manual: true,
         pageIndex: pagination.pageIndex,
