@@ -29,10 +29,10 @@ export function Hero() {
       </div>
       <div className='flex gap-4'>
         <Button size='lg' asChild>
-          <Link href='/docs/getting-started'>Get Started</Link>
+          <Link href='/docs/getting-started/installation'>Get Started</Link>
         </Button>
         <Button variant='outline' size='lg' asChild>
-          <Link href='/docs/components'>Components</Link>
+          <Link href='/docs/components/data-table'>Components</Link>
         </Button>
       </div>
     </section>
