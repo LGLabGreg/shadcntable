@@ -1,7 +1,8 @@
-import { useShadcnTable } from '@/registry/components/shadcntable/hooks/use-shadcn-table'
 import { type ColumnDef } from '@tanstack/react-table'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+
+import { useShadcnTable } from '@/registry/components/shadcntable/hooks/use-shadcn-table'
 
 type TestItem = {
   id: string

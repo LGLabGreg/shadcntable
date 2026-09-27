@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 90,
+  "tabWidth": 2,
+  "singleQuote": true,
+  "jsxSingleQuote": true,
+  "semi": false,
+  "sortPackageJson": false,
+  "sortImports": {
+    "newlinesBetween": true,
+    "customGroups": [
+      { "groupName": "alias-types", "elementNamePattern": ["@/types/**"] },
+      { "groupName": "alias-server", "elementNamePattern": ["@/server/**"] },
+      { "groupName": "alias-constants", "elementNamePattern": ["@/constants/**"] },
+      { "groupName": "alias-schemas", "elementNamePattern": ["@/schemas/**"] },
+      { "groupName": "alias-config", "elementNamePattern": ["@/config/**"] },
+      { "groupName": "alias-components", "elementNamePattern": ["@/components/**"] },
+      { "groupName": "alias-hooks", "elementNamePattern": ["@/hooks/**"] },
+      { "groupName": "alias-lib", "elementNamePattern": ["@/lib/**"] },
+      { "groupName": "alias-images", "elementNamePattern": ["@/images/**"] }
+    ],
+    "groups": [
+      ["builtin", "external"],
+      "alias-types",
+      "alias-server",
+      "alias-constants",
+      "alias-schemas",
+      "alias-config",
+      "alias-components",
+      "alias-hooks",
+      "alias-lib",
+      "alias-images",
+      ["parent", "sibling", "index"],
+      "unknown"
+    ]
+  },
+  "ignorePatterns": ["pnpm-lock.yaml", "CHANGELOG.md", "public/r/**"]
+}

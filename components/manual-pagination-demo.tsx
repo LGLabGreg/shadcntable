@@ -1,7 +1,5 @@
 'use client'
 
-import { DataTable } from '@/registry/components/shadcntable/data-table'
-import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
 import {
   QueryClient,
   QueryClientProvider,
@@ -10,6 +8,9 @@ import {
 } from '@tanstack/react-query'
 import { type ColumnDef } from '@tanstack/react-table'
 import { useState } from 'react'
+
+import { DataTable } from '@/registry/components/shadcntable/data-table'
+import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
 
 type Person = {
   firstName: string

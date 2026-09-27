@@ -69,8 +69,10 @@ export function DashboardTableOfContents({ items }: TocProps) {
       }
     })
 
+    const headings = visibleHeadings.current
+
     return () => {
-      visibleHeadings.current.clear()
+      headings.clear()
       items.forEach((item) => {
         const element = document.getElementById(item.id)
         if (element) {

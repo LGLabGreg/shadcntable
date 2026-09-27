@@ -1,5 +1,6 @@
-import { debounce } from '@/registry/components/shadcntable/utils/debounce'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { debounce } from '@/registry/components/shadcntable/utils/debounce'
 
 describe('debounce', () => {
   beforeEach(() => {

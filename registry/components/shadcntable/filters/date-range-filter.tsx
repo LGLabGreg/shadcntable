@@ -34,7 +34,7 @@ export function DateRangeFilter({ value, onChange, config }: FilterComponentProp
                 {`${format(dateRange.from, 'LLL dd, y')} - ${format(dateRange.to, 'LLL dd, y')}`}
               </>
             ) : (
-              `${format(dateRange.from, 'LLL dd, y')}`
+              format(dateRange.from, 'LLL dd, y')
             )
           ) : (
             `${config.placeholder}`
