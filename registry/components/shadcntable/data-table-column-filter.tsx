@@ -1,55 +1,56 @@
-import { type Column } from '@tanstack/react-table'
+'use client'
+
+import type { RowData } from '@tanstack/react-table'
 
 import { DateRangeFilter } from './filters/date-range-filter'
 import { MultiSelectFilter } from './filters/multi-select-filter'
 import { NumberRangeFilter } from './filters/number-range-filter'
 import { SelectFilter } from './filters/select-filter'
 import { TextFilter } from './filters/text-filter'
-import type { FilterComponentProps, FilterValue } from './types/filters'
+import type { DataTableColumn } from './lib/types'
 
-interface DataTableColumnFilterProps<TData, TValue> {
-  column: Column<TData, TValue>
+interface DataTableColumnFilterProps<TData extends RowData, TValue> {
+  column: DataTableColumn<TData, TValue>
 }
 
-export function DataTableColumnFilter<TData, TValue>({
+/** Renders the filter input configured in `meta.filter` for a column. */
+export function DataTableColumnFilter<TData extends RowData, TValue>({
   column,
 }: DataTableColumnFilterProps<TData, TValue>) {
   'use no memo'
-  const filterConfig = column.columnDef.meta?.filterConfig
+  const config = column.columnDef.meta?.filter
+  if (!config) return null
 
-  if (!filterConfig) return null
+  // The value's shape is fixed by the variant, so each input narrows it.
+  const value = column.getFilterValue() as never
+  const onChange = (next: unknown) => column.setFilterValue(next)
+  const props = { value, onChange }
 
-  const filterValue = column.getFilterValue() as FilterValue
-  const setFilterValue = (value: FilterValue) => column.setFilterValue(value)
-  const clearFilter = () => column.setFilterValue(undefined)
-
-  const commonProps: FilterComponentProps = {
-    config: filterConfig,
-    value: filterValue,
-    onChange: setFilterValue,
-    onClear: clearFilter,
-  }
-
-  switch (filterConfig.variant) {
+  switch (config.variant) {
     case 'text':
-      return <TextFilter {...commonProps} />
-
+      return (
+        <TextFilter
+          {...props}
+          placeholder={config.placeholder}
+          debounceMs={config.debounceMs}
+        />
+      )
     case 'select':
-      return <SelectFilter {...commonProps} />
-
-    case 'multi-select':
-      return <MultiSelectFilter {...commonProps} />
-
-    case 'date-range':
-      return <DateRangeFilter {...commonProps} />
-
-    case 'number-range':
-      return <NumberRangeFilter {...commonProps} />
-
+      return (
+        <SelectFilter
+          {...props}
+          options={config.options}
+          placeholder={config.placeholder}
+        />
+      )
+    case 'multiSelect':
+      return <MultiSelectFilter {...props} options={config.options} />
+    case 'dateRange':
+      return <DateRangeFilter {...props} />
+    case 'numberRange':
+      return <NumberRangeFilter {...props} />
     case 'custom':
-      const CustomComponent = filterConfig.component
-      return CustomComponent ? <CustomComponent {...commonProps} /> : null
-
+      return <config.component {...props} />
     default:
       return null
   }

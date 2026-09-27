@@ -1,175 +1,117 @@
 ---
 title: Quick Start
-description: Get started with shadcntable in minutes
+description: Build your first data table in a few minutes
 ---
 
-## Basic Usage
+## How it fits together
 
-Here's a minimal example to get you started with the DataTable component.
+shadcntable is a set of composable pieces on top of [TanStack Table v9](https://tanstack.com/table):
 
-### Define your data type
+- `useDataTable` creates the table instance and owns its state.
+- `DataTable` renders the rows. `DataTableToolbar` and `DataTablePagination` sit around it, and all three take the same `table`.
+- Column definitions describe the data, and `meta` turns on labels and filters.
 
-First, define the shape of your data:
+Everything is copied into your project, so you can change any piece.
 
-```typescript
+## 1. Define your columns
+
+Create a column helper for your row type. Keep `columns` outside the component so it stays the same between renders.
+
+```tsx
+import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
+import { createDataTableColumnHelper } from '@/components/shadcntable/lib/features'
+
 type User = {
   id: string
   name: string
   email: string
-  role: string
+  role: 'admin' | 'editor' | 'viewer'
 }
+
+const columnHelper = createDataTableColumnHelper<User>()
+
+const columns = columnHelper.columns([
+  columnHelper.accessor('name', {
+    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    meta: { label: 'Name' },
+  }),
+  columnHelper.accessor('email', {
+    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    meta: { label: 'Email' },
+  }),
+  columnHelper.accessor('role', {
+    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    meta: { label: 'Role' },
+  }),
+])
 ```
 
-### Create your columns
+`DataTableColumnHeader` takes its title from `meta.label`. It gives the column a menu to sort and hide it.
 
-Define the columns for your table using TanStack Table's `ColumnDef`:
-
-```tsx
-import { type ColumnDef } from '@tanstack/react-table'
-
-import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
-
-const columns: ColumnDef<User>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
-  },
-  {
-    accessorKey: 'email',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
-  },
-  {
-    accessorKey: 'role',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
-  },
-]
-```
-
-### Add your data
-
-Create some sample data:
-
-```typescript
-const users: User[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Admin' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'User' },
-  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', role: 'User' },
-  { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: 'Editor' },
-  { id: '5', name: 'Charlie Wilson', email: 'charlie@example.com', role: 'User' },
-]
-```
-
-### Render the DataTable
-
-Put it all together in your component:
+## 2. Render the table
 
 ```tsx
 'use client'
 
-import { type ColumnDef } from '@tanstack/react-table'
-
 import { DataTable } from '@/components/shadcntable/data-table'
-import { DataTableColumnHeader } from '@/components/shadcntable/data-table-column-header'
+import { DataTablePagination } from '@/components/shadcntable/data-table-pagination'
+import { DataTableToolbar } from '@/components/shadcntable/data-table-toolbar'
+import { useDataTable } from '@/components/shadcntable/use-data-table'
 
-type User = {
-  id: string
-  name: string
-  email: string
-  role: string
-}
+export function UsersTable({ users }: { users: User[] }) {
+  const table = useDataTable({ columns, data: users })
 
-const columns: ColumnDef<User>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
-  },
-  {
-    accessorKey: 'email',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
-  },
-  {
-    accessorKey: 'role',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
-  },
-]
-
-const users: User[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Admin' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'User' },
-  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', role: 'User' },
-  { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: 'Editor' },
-  { id: '5', name: 'Charlie Wilson', email: 'charlie@example.com', role: 'User' },
-]
-
-export function UsersTable() {
-  return <DataTable columns={columns} data={users} />
+  return (
+    <div className='space-y-4'>
+      <DataTableToolbar table={table} />
+      <DataTable table={table} />
+      <DataTablePagination table={table} />
+    </div>
+  )
 }
 ```
 
-## Adding Features
+You now have sorting, global search, column visibility and pagination.
 
-### Row Selection
+## 3. Add filters
 
-Enable row selection by passing the `rowSelection` prop:
-
-```tsx
-<DataTable
-  columns={columns}
-  data={users}
-  rowSelection={{
-    onRowSelectionChange: (selection) => console.log('Selected:', selection),
-  }}
-/>
-```
-
-### Column Filters
-
-Add filters to your columns using the `meta.filterConfig` property:
+Give a column a `meta.filter` and its header gets a filter button:
 
 ```tsx
-const columns: ColumnDef<User>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
-    meta: {
-      filterConfig: {
-        title: 'Filter by name',
-        variant: 'text',
-        placeholder: 'Search names...',
-        debounceMs: 300,
-      },
+columnHelper.accessor('role', {
+  header: ({ column }) => <DataTableColumnHeader column={column} />,
+  meta: {
+    label: 'Role',
+    filter: {
+      variant: 'multiSelect',
+      options: [
+        { label: 'Admin', value: 'admin' },
+        { label: 'Editor', value: 'editor' },
+        { label: 'Viewer', value: 'viewer' },
+      ],
     },
   },
-  {
-    accessorKey: 'role',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
-    meta: {
-      filterConfig: {
-        title: 'Filter by role',
-        variant: 'select',
-        placeholder: 'Select role...',
-        options: [
-          { label: 'Admin', value: 'Admin' },
-          { label: 'Editor', value: 'Editor' },
-          { label: 'User', value: 'User' },
-        ],
-      },
-    },
-  },
-]
+})
 ```
 
-### Pagination
+The variants are `text`, `select`, `multiSelect`, `numberRange`, `dateRange` and `custom`. See [filters](/docs/components/data-table#filters).
 
-Configure pagination with the `pagination` prop:
+## 4. Add row selection
+
+Put the selection column first. The pagination bar then shows how many rows are selected.
 
 ```tsx
-<DataTable
-  columns={columns}
-  data={users}
-  pagination={{
-    pageSize: 10,
-    pageSizeOptions: [10, 20, 50],
-  }}
-/>
+import { createSelectionColumn } from '@/components/shadcntable/data-table-selection-column'
+
+const columns = columnHelper.columns([
+  createSelectionColumn<User>(),
+  // ...your columns
+])
 ```
+
+Read the selection with `table.getSelectedRowModel().rows`. To own the state yourself, pass `state.rowSelection` and `onRowSelectionChange` to `useDataTable`.
+
+## Next steps
+
+- [DataTable reference](/docs/components/data-table): every component, option and filter.
+- [Server-side data](/docs/examples/server-side): pagination, sorting and search on the server with TanStack Query.

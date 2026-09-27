@@ -1,32 +1,42 @@
+'use client'
+
 import { Input } from '@/components/ui/input'
 
-import { useDataTableLocale } from '../contexts/data-table-locale-context'
-import type { FilterComponentProps } from '../types/filters'
+import { useDataTableLocale } from '../lib/locale'
+import type { FilterComponentProps, NumberRangeFilterValue } from '../lib/types'
 
-export function NumberRangeFilter({ value, onChange }: FilterComponentProps) {
-  const [min, max] = (value ?? [undefined, undefined]) as [number?, number?]
+export function NumberRangeFilter({
+  value = [],
+  onChange,
+}: FilterComponentProps<NumberRangeFilterValue>) {
   const locale = useDataTableLocale()
+  const [min, max] = value
+
+  const update = (next: NumberRangeFilterValue) =>
+    onChange(next[0] === undefined && next[1] === undefined ? undefined : next)
+
+  const parse = (input: string) => (input === '' ? undefined : Number(input))
 
   return (
-    <div className='flex gap-2'>
+    <div className='flex items-center gap-2'>
       <Input
         type='number'
-        placeholder={locale.filters.numberRange.min}
+        inputMode='decimal'
+        placeholder={locale.filters.min}
+        aria-label={locale.filters.min}
         value={min ?? ''}
-        onChange={(e) => {
-          const newMin = e.target.value ? Number(e.target.value) : undefined
-          onChange([newMin, max])
-        }}
+        onChange={(event) => update([parse(event.target.value), max])}
+        className='h-8'
       />
-      <span className='flex items-center'>-</span>
+      <span className='text-muted-foreground'>–</span>
       <Input
         type='number'
-        placeholder={locale.filters.numberRange.max}
+        inputMode='decimal'
+        placeholder={locale.filters.max}
+        aria-label={locale.filters.max}
         value={max ?? ''}
-        onChange={(e) => {
-          const newMax = e.target.value ? Number(e.target.value) : undefined
-          onChange([min, newMax])
-        }}
+        onChange={(event) => update([min, parse(event.target.value)])}
+        className='h-8'
       />
     </div>
   )

@@ -1,5 +1,6 @@
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
+import remarkGfm from 'remark-gfm'
 
 import { createMdxComponents } from '@/components/mdx/mdx-components'
 import { DashboardTableOfContents } from '@/components/toc'
@@ -74,7 +75,11 @@ export default async function DocPage(props: { params: Promise<{ slug: string[] 
             <p className='text-lg text-muted-foreground'>{doc.description}</p>
           )}
         </div>
-        <MDXRemote source={doc.content} components={mdxComponents} />
+        <MDXRemote
+          source={doc.content}
+          components={mdxComponents}
+          options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+        />
       </div>
       <div className='hidden xl:block w-64 shrink-0'>
         <div className='sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-8'>

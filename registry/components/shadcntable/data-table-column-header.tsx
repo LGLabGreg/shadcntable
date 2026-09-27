@@ -1,5 +1,7 @@
-import { type Column } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff, ListFilter } from 'lucide-react'
+'use client'
+
+import type { RowData } from '@tanstack/react-table'
+import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff, ListFilter, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -13,126 +15,121 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 import { cn } from '@/lib/utils'
 
-import { useDataTableLocale } from './contexts/data-table-locale-context'
 import { DataTableColumnFilter } from './data-table-column-filter'
+import { useDataTableLocale } from './lib/locale'
+import type { DataTableColumn } from './lib/types'
 
-interface DataTableColumnHeaderProps<
-  TData,
-  TValue,
-> extends React.HTMLAttributes<HTMLDivElement> {
-  column: Column<TData, TValue>
-  title: string
+interface DataTableColumnHeaderProps<TData extends RowData, TValue> {
+  column: DataTableColumn<TData, TValue>
+  /** Defaults to `meta.label`, then the column id. */
+  title?: string
+  className?: string
 }
 
-export function DataTableColumnHeader<TData, TValue>({
+export function DataTableColumnHeader<TData extends RowData, TValue>({
   column,
-  title,
+  title = column.columnDef.meta?.label ?? column.id,
+  className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   'use no memo'
-  const filterConfig = column.columnDef.meta?.filterConfig
-  const hasActiveFilter = column.getFilterValue() !== undefined
   const locale = useDataTableLocale()
+  const canSort = column.getCanSort()
+  const canHide = column.getCanHide()
+  const filter = column.columnDef.meta?.filter
+  const canFilter = filter !== undefined && column.getCanFilter()
 
-  if (!column.getCanSort() && !filterConfig) {
-    return <div>{title}</div>
+  if (!canSort && !canHide && !canFilter) {
+    return <div className={className}>{title}</div>
   }
 
-  const isSorted = column.getIsSorted()
-  const isSortedDesc = isSorted === 'desc'
-  const isSortedAsc = isSorted === 'asc'
+  const sorted = column.getIsSorted()
+  const SortIcon =
+    sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ChevronsUpDown
 
   return (
-    <div className='flex items-center space-x-2 justify-between'>
-      <span>{title}</span>
-      <div className='flex items-center space-x-0.1'>
+    <div className={cn('flex items-center gap-1', className)}>
+      {canSort || canHide ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant='ghost'
-              size='icon-sm'
-              className='data-[state=open]:bg-accent'
-              aria-label={locale.columnHeader.sortMenuLabel}
+              size='sm'
+              className='-ml-3 h-8 data-[state=open]:bg-accent'
             >
-              {isSortedDesc ? (
-                <ArrowDown />
-              ) : isSortedAsc ? (
-                <ArrowUp />
-              ) : (
-                <ChevronsUpDown />
-              )}
+              {title}
+              {canSort && <SortIcon className='text-muted-foreground' />}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align='start'>
-            {!isSortedAsc && (
-              <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-                <ArrowUp />
-                {locale.columnHeader.sortAscending}
+            {canSort && (
+              <>
+                <DropdownMenuItem onSelect={() => column.toggleSorting(false)}>
+                  <ArrowUp />
+                  {locale.columnHeader.sortAscending}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => column.toggleSorting(true)}>
+                  <ArrowDown />
+                  {locale.columnHeader.sortDescending}
+                </DropdownMenuItem>
+                {sorted && (
+                  <DropdownMenuItem onSelect={() => column.clearSorting()}>
+                    <X />
+                    {locale.columnHeader.clearSorting}
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
+            {canSort && canHide && <DropdownMenuSeparator />}
+            {canHide && (
+              <DropdownMenuItem onSelect={() => column.toggleVisibility(false)}>
+                <EyeOff />
+                {locale.columnHeader.hideColumn}
               </DropdownMenuItem>
             )}
-            {!isSortedDesc && (
-              <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-                <ArrowDown />
-                {locale.columnHeader.sortDescending}
-              </DropdownMenuItem>
-            )}
-            {isSorted && (
-              <DropdownMenuItem onClick={() => column.clearSorting()}>
-                <ChevronsUpDown />
-                {locale.columnHeader.clearSorting}
-              </DropdownMenuItem>
-            )}
-
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-              <EyeOff />
-              {locale.columnHeader.hideColumn}
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      ) : (
+        <span>{title}</span>
+      )}
 
-        {/* Filter popover */}
-        {filterConfig && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon-sm'
-                className={cn(hasActiveFilter && 'bg-accent text-accent-foreground')}
-                aria-label={locale.columnHeader.filterMenuLabel}
-              >
-                <ListFilter />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className='w-80' align='start'>
-              <div className='space-y-4'>
-                {(filterConfig.title || filterConfig.description) && (
-                  <div className='space-y-2'>
-                    {filterConfig.title && (
-                      <h4 className='font-medium leading-none'>{filterConfig.title}</h4>
-                    )}
-                    {filterConfig.description && (
-                      <p className='text-sm text-muted-foreground'>
-                        {filterConfig.description}
-                      </p>
-                    )}
-                  </div>
+      {canFilter && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant='ghost'
+              size='icon-sm'
+              aria-label={locale.columnHeader.filterColumn(title)}
+              data-active={column.getIsFiltered() || undefined}
+              className='text-muted-foreground data-active:bg-accent data-active:text-accent-foreground'
+            >
+              <ListFilter />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align='start' className='w-auto min-w-64 space-y-3'>
+            {(filter.title || filter.description) && (
+              <div className='space-y-1'>
+                {filter.title && (
+                  <h4 className='font-medium leading-none'>{filter.title}</h4>
                 )}
-                <DataTableColumnFilter column={column} />
-                {hasActiveFilter && (
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='w-full'
-                    onClick={() => column.setFilterValue(undefined)}
-                  >
-                    {locale.columnHeader.clearFilter}
-                  </Button>
+                {filter.description && (
+                  <p className='text-sm text-muted-foreground'>{filter.description}</p>
                 )}
               </div>
-            </PopoverContent>
-          </Popover>
-        )}
-      </div>
+            )}
+            <DataTableColumnFilter column={column} />
+            {column.getIsFiltered() && (
+              <Button
+                variant='outline'
+                size='sm'
+                className='w-full'
+                onClick={() => column.setFilterValue(undefined)}
+              >
+                {locale.columnHeader.clearFilter}
+              </Button>
+            )}
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   )
 }

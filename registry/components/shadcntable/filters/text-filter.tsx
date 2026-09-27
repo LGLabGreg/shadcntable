@@ -1,36 +1,45 @@
-// components/filters/text-filter.tsx
-import { useEffect, useMemo, useState } from 'react'
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
 
 import { Input } from '@/components/ui/input'
 
-import { type FilterComponentProps } from '../types/filters'
-import { debounce } from '../utils/debounce'
+import type { FilterComponentProps, TextFilterValue } from '../lib/types'
 
-export function TextFilter({ value, onChange, config }: FilterComponentProps) {
-  const [localValue, setLocalValue] = useState(value ?? '')
+interface TextFilterProps extends FilterComponentProps<TextFilterValue> {
+  placeholder?: string
+  debounceMs?: number
+}
 
-  const debouncedOnChange = useMemo(
-    () => debounce((val: string) => onChange(val), config.debounceMs),
-    [onChange, config.debounceMs],
-  )
+export function TextFilter({
+  value,
+  onChange,
+  placeholder,
+  debounceMs = 300,
+}: TextFilterProps) {
+  const [draft, setDraft] = useState(value ?? '')
+  const [committed, setCommitted] = useState(value)
 
-  useEffect(() => {
-    return () => debouncedOnChange.cancel()
-  }, [debouncedOnChange])
+  // Reset the draft when the value changes from outside, e.g. "Clear filter".
+  if (value !== committed) {
+    setCommitted(value)
+    setDraft(value ?? '')
+  }
+  const timeout = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => () => clearTimeout(timeout.current), [])
 
   return (
     <Input
-      placeholder={config.placeholder}
-      value={
-        typeof localValue === 'string' || typeof localValue === 'number'
-          ? String(localValue)
-          : ''
-      }
-      onChange={(e) => {
-        setLocalValue(e.target.value)
-        debouncedOnChange(e.target.value)
+      value={draft}
+      placeholder={placeholder}
+      onChange={(event) => {
+        const next = event.target.value
+        setDraft(next)
+        clearTimeout(timeout.current)
+        timeout.current = setTimeout(() => onChange(next || undefined), debounceMs)
       }}
-      className='h-8 w-full'
+      className='h-8'
     />
   )
 }

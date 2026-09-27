@@ -1,125 +1,158 @@
 import type { PropDefinition } from './props-table'
 
 export const propsTables = {
-  dataTable: [
-    {
-      name: 'columns',
-      type: 'ColumnDef<TData, TValue>[]',
-      default: 'Required',
-      description: "Column definitions using TanStack Table's ColumnDef",
-    },
+  useDataTable: [
     {
       name: 'data',
       type: 'TData[]',
       default: 'Required',
-      description: 'Array of data to display',
+      description: 'Rows to display. Keep the reference stable between renders.',
     },
     {
-      name: 'emptyState',
-      type: 'React.ReactNode',
-      description: 'Custom empty state when no data',
+      name: 'columns',
+      type: 'DataTableColumnDef<TData>[]',
+      default: 'Required',
+      description: 'Column definitions, usually built with createDataTableColumnHelper.',
+    },
+    {
+      name: 'initialState',
+      type: 'Partial<TableState>',
+      description: 'Starting state, e.g. the page size or a default sort.',
+    },
+    {
+      name: 'state',
+      type: 'Partial<TableState>',
+      description: 'Controlled state slices. Pair each one with its on[Slice]Change.',
+    },
+    {
+      name: 'manualPagination / manualSorting / manualFiltering',
+      type: 'boolean',
+      default: 'false',
+      description: 'Leave that step to your server and render data as given.',
+    },
+    {
+      name: 'rowCount',
+      type: 'number',
+      description: 'Total rows on the server, used for the page count in manual mode.',
+    },
+    {
+      name: 'enableRowSelection',
+      type: 'boolean | (row) => boolean',
+      default: 'true',
+      description: 'Which rows can be selected.',
+    },
+    {
+      name: 'getRowId',
+      type: '(row, index) => string',
+      description: 'Stable row ids, so selection survives data changes.',
+    },
+  ],
+  dataTable: [
+    {
+      name: 'table',
+      type: 'DataTableInstance<TData>',
+      default: 'Required',
+      description: 'The instance returned by useDataTable.',
     },
     {
       name: 'isLoading',
       type: 'boolean',
       default: 'false',
-      description: 'Shows loading skeleton when true',
+      description: 'Shows skeleton rows instead of data.',
     },
     {
       name: 'isFetching',
       type: 'boolean',
       default: 'false',
-      description: 'Shows overlay with spinner over existing rows when fetching data',
+      description: 'Shows a spinner over the current rows.',
     },
     {
-      name: 'locale',
-      type: 'Partial<DataTableLocale>',
-      description: 'Override default text strings for internationalization',
+      name: 'emptyState',
+      type: 'ReactNode',
+      description: 'Replaces the default "No results." message.',
     },
     {
       name: 'onRowClick',
-      type: '(row: TData) => void',
-      description: 'Callback when a row is clicked',
-    },
-    {
-      name: 'pagination',
-      type: 'DataTablePaginationConfig',
-      description: 'Pagination configuration',
-    },
-    {
-      name: 'rowSelection',
-      type: 'DataTableRowSelectionConfig',
-      description: 'Row selection configuration',
-    },
-    {
-      name: 'toolbar',
-      type: 'DataTableToolbarConfig',
-      description: 'Toolbar configuration',
-    },
-  ],
-  pagination: [
-    {
-      name: 'enabled',
-      type: 'boolean',
-      default: 'true',
-      description: 'Enable/disable pagination',
-    },
-    { name: 'pageSize', type: 'number', default: '10', description: 'Initial page size' },
-    {
-      name: 'pageSizeOptions',
-      type: 'number[]',
-      default: '[10, 25, 50]',
-      description: 'Available page size options',
-    },
-    {
-      name: 'manual',
-      type: 'boolean',
+      type: '(row: DataTableRow<TData>) => void',
       description:
-        'Enable manual/server-side pagination. When true, pagination state and data are controlled externally.',
+        'Makes rows clickable and focusable. Clicks on buttons, links and checkboxes are ignored.',
     },
     {
-      name: 'pageIndex',
+      name: 'skeletonRowCount',
       type: 'number',
-      description:
-        'Externally controlled current page index (0-based) when using manual pagination.',
-    },
-    {
-      name: 'rowCount',
-      type: 'number',
-      description:
-        'Total number of rows across all pages when using manual pagination. Used with `pageSize` to compute the total page count.',
-    },
-    {
-      name: 'onPaginationChange',
-      type: '({ pageIndex: number; pageSize: number }) => void',
-      description:
-        'Single callback fired whenever pagination state changes (page index or page size) in manual mode.',
-    },
-  ],
-  rowSelection: [
-    {
-      name: 'enableRowSelection',
-      type: '((row: Row<TData>) => boolean)',
-      description: 'Enable selection globally or per-row',
-    },
-    {
-      name: 'onRowSelectionChange',
-      type: '(selectedRows: TData[]) => void',
-      description: 'Callback when selection changes',
+      default: '5',
+      description: 'Number of skeleton rows while loading.',
     },
   ],
   toolbar: [
     {
-      name: 'search',
-      type: 'boolean',
-      default: 'true',
-      description: 'Show global search input',
+      name: 'table',
+      type: 'DataTableInstance<TData>',
+      default: 'Required',
+      description: 'The instance returned by useDataTable.',
     },
     {
-      name: 'viewOptions',
+      name: 'showSearch',
       type: 'boolean',
       default: 'true',
-      description: 'Show column visibility toggle',
+      description: 'Shows the global search input.',
+    },
+    {
+      name: 'showViewOptions',
+      type: 'boolean',
+      default: 'true',
+      description: 'Shows the column visibility menu.',
+    },
+    {
+      name: 'children',
+      type: 'ReactNode',
+      description: 'Extra filters or actions, placed after the search input.',
+    },
+  ],
+  pagination: [
+    {
+      name: 'table',
+      type: 'DataTableInstance<TData>',
+      default: 'Required',
+      description: 'The instance returned by useDataTable.',
+    },
+    {
+      name: 'pageSizeOptions',
+      type: 'number[]',
+      default: '[10, 20, 30, 40, 50]',
+      description: 'Choices in the rows-per-page menu.',
+    },
+    {
+      name: 'showSelectedCount',
+      type: 'boolean',
+      default: 'true with a selection column',
+      description: 'Shows how many rows are selected.',
+    },
+  ],
+  columnHeader: [
+    {
+      name: 'column',
+      type: 'DataTableColumn<TData>',
+      default: 'Required',
+      description: 'The column from the header context.',
+    },
+    {
+      name: 'title',
+      type: 'string',
+      default: 'meta.label ?? column.id',
+      description: 'Text shown in the header.',
+    },
+  ],
+  columnMeta: [
+    {
+      name: 'label',
+      type: 'string',
+      description: 'Readable column name for the header and the view options menu.',
+    },
+    {
+      name: 'filter',
+      type: 'FilterConfig',
+      description: 'Adds a filter popover to the column header.',
     },
   ],
   filterConfig: [
@@ -127,40 +160,40 @@ export const propsTables = {
       name: 'variant',
       type: 'FilterVariant',
       default: 'Required',
-      description: 'Type of filter (text, select, date-range, etc.)',
+      description:
+        'text, select, multiSelect, numberRange, dateRange or custom. Picks the input and the matching logic.',
     },
-    { name: 'title', type: 'string', description: 'Title shown in filter popover' },
+    {
+      name: 'title',
+      type: 'string',
+      description: 'Heading at the top of the filter popover.',
+    },
     {
       name: 'description',
       type: 'string',
-      description: 'Description shown in filter popover',
+      description: 'Helper text under the title.',
     },
-    { name: 'placeholder', type: 'string', description: 'Placeholder text' },
+    {
+      name: 'placeholder',
+      type: 'string',
+      description: 'Placeholder for text and select filters.',
+    },
     {
       name: 'options',
-      type: 'Array<{label, value}>',
-      description: 'Options for select filters',
+      type: 'FilterOption[]',
+      description: 'Choices for select and multiSelect: { label, value, icon? }.',
     },
-    { name: 'debounceMs', type: 'number', description: 'Debounce delay in milliseconds' },
     {
-      name: 'caseSensitive',
-      type: 'boolean',
-      default: 'false',
-      description: 'Case-sensitive text matching',
+      name: 'debounceMs',
+      type: 'number',
+      default: '300',
+      description: 'Delay before a text filter applies.',
     },
     {
       name: 'component',
-      type: 'React.ComponentType',
-      description: 'Custom filter component',
+      type: 'ComponentType<FilterComponentProps>',
+      description: 'The input for the custom variant. Receives value and onChange.',
     },
-  ],
-  filterVariants: [
-    { name: 'text', type: 'string', description: 'Free text input' },
-    { name: 'select', type: 'string', description: 'Single select dropdown' },
-    { name: 'multi-select', type: 'string', description: 'Multi-select dropdown' },
-    { name: 'date-range', type: 'string', description: 'Date range picker' },
-    { name: 'number-range', type: 'string', description: 'Min/max number inputs' },
-    { name: 'custom', type: 'string', description: 'Custom filter component' },
   ],
 } satisfies Record<string, PropDefinition[]>
 
