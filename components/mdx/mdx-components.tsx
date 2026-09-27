@@ -1,11 +1,11 @@
 import Image from 'next/image'
 import { Children, isValidElement } from 'react'
 
-import { ManualPaginationDemo } from '@/components/manual-pagination-demo'
 import { CodeBlock } from '@/components/mdx/code-block'
 import { ComponentPreview } from '@/components/mdx/component-preview'
 import { PropsTable } from '@/components/mdx/props-table'
 import { Tip } from '@/components/mdx/tip'
+import { ServerSideDemo } from '@/components/server-side-demo'
 
 import { cn } from '@/lib/utils'
 
@@ -213,7 +213,7 @@ export function createMdxComponents() {
     ComponentPreview: (props: React.ComponentProps<typeof ComponentPreview>) => (
       <ComponentPreview {...props} />
     ),
-    ManualPaginationDemo,
+    ServerSideDemo,
     PropsTable,
   }
 }

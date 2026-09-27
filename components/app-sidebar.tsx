@@ -40,12 +40,7 @@ const navigation: NavigationSectionItem[] = [
   },
   {
     title: 'Examples',
-    items: [
-      {
-        title: 'Manual Pagination',
-        href: '/docs/examples/data-table-manual-pagination',
-      },
-    ],
+    items: [{ title: 'Server-side Data', href: '/docs/examples/server-side' }],
   },
   {
     title: 'Help',

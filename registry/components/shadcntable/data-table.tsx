@@ -1,166 +1,144 @@
 'use client'
 
-import { type ColumnDef, type FilterFnOption, type Row } from '@tanstack/react-table'
-import { isAfter, isBefore, isDate, isSameDay } from 'date-fns'
-import { useMemo } from 'react'
+import type { RowData } from '@tanstack/react-table'
+import { Inbox } from 'lucide-react'
+import type { ComponentProps, KeyboardEvent, MouseEvent, ReactNode } from 'react'
 
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
-import { Table } from '@/components/ui/table'
-
-import { defaultDataTableLocale } from './config/locale'
-import { DataTableLocaleProvider } from './contexts/data-table-locale-context'
-import { DataTableBody, type DataTableBodyProps } from './data-table-body'
-import { DataTableHeader } from './data-table-header'
 import {
-  DataTablePagination,
-  type DataTablePaginationConfig,
-} from './data-table-pagination'
-import {
-  type DataTableRowSelectionConfig,
-  createRowSelectionColumn,
-} from './data-table-row-selection'
-import { DataTableToolbar, type DataTableToolbarConfig } from './data-table-toolbar'
-import { useShadcnTable } from './hooks/use-shadcn-table'
-import { type FilterValue } from './types/filters'
-import { type DataTableLocale } from './types/locale'
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  emptyState?: DataTableBodyProps<TData>['emptyState']
+import { cn } from '@/lib/utils'
+
+import { useDataTableLocale } from './lib/locale'
+import type { DataTableInstance, DataTableRow } from './lib/types'
+
+// Clicks on these elements inside a row never trigger `onRowClick`.
+const INTERACTIVE_SELECTOR =
+  'a, button, input, select, textarea, label, [role="checkbox"], [role="menuitem"], [role="option"]'
+
+export interface DataTableProps<TData extends RowData> extends ComponentProps<'div'> {
+  table: DataTableInstance<TData>
+  /** Renders skeleton rows instead of data, for the initial load. */
   isLoading?: boolean
+  /** Overlays a spinner on the current rows, for background refetches. */
   isFetching?: boolean
-  locale?: Partial<DataTableLocale>
-  onRowClick?: (row: TData) => void
-  pagination?: DataTablePaginationConfig
-  rowSelection?: DataTableRowSelectionConfig<TData>
-  toolbar?: DataTableToolbarConfig
+  /** Replaces the default "no results" message. */
+  emptyState?: ReactNode
+  onRowClick?: (row: DataTableRow<TData>) => void
+  skeletonRowCount?: number
 }
 
-export function DataTable<TData, TValue>({
-  columns,
-  data,
+export function DataTable<TData extends RowData>({
+  table,
+  isLoading = false,
+  isFetching = false,
   emptyState,
-  isLoading,
-  isFetching,
-  locale,
   onRowClick,
-  pagination,
-  rowSelection,
-  toolbar,
-}: DataTableProps<TData, TValue>) {
+  skeletonRowCount = 5,
+  className,
+  ...props
+}: DataTableProps<TData>) {
   'use no memo'
-  const isManualPagination =
-    pagination?.manual === true && typeof pagination.onPaginationChange === 'function'
+  const locale = useDataTableLocale()
+  const rows = table.getRowModel().rows
+  const columnCount = table.getVisibleLeafColumns().length
 
-  const manualPagination = isManualPagination
-    ? {
-        manual: true,
-        pageIndex: pagination.pageIndex ?? 0,
-        pageSize: pagination.pageSize ?? pagination.pageSizeOptions?.[0] ?? 10,
-        rowCount: pagination.rowCount,
-        onPaginationChange: pagination.onPaginationChange,
-      }
-    : undefined
+  const handleRowClick = (event: MouseEvent<HTMLElement>, row: DataTableRow<TData>) => {
+    if ((event.target as HTMLElement).closest(INTERACTIVE_SELECTOR)) return
+    onRowClick?.(row)
+  }
 
-  const mergedLocale = useMemo(() => {
-    return {
-      body: { ...defaultDataTableLocale.body, ...locale?.body },
-      pagination: { ...defaultDataTableLocale.pagination, ...locale?.pagination },
-      toolbar: { ...defaultDataTableLocale.toolbar, ...locale?.toolbar },
-      viewOptions: { ...defaultDataTableLocale.viewOptions, ...locale?.viewOptions },
-      rowSelection: { ...defaultDataTableLocale.rowSelection, ...locale?.rowSelection },
-      columnHeader: { ...defaultDataTableLocale.columnHeader, ...locale?.columnHeader },
-      filters: {
-        multiSelect: {
-          ...defaultDataTableLocale.filters.multiSelect,
-          ...locale?.filters?.multiSelect,
-        },
-        numberRange: {
-          ...defaultDataTableLocale.filters.numberRange,
-          ...locale?.filters?.numberRange,
-        },
-      },
+  const handleRowKeyDown = (
+    event: KeyboardEvent<HTMLElement>,
+    row: DataTableRow<TData>,
+  ) => {
+    if (event.target !== event.currentTarget) return
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      onRowClick?.(row)
     }
-  }, [locale])
-
-  const prepareColumns = useMemo(() => {
-    const tmpColumns = [...columns]
-    if (rowSelection) {
-      tmpColumns.unshift(createRowSelectionColumn<TData>())
-    }
-    return tmpColumns.map((column) => {
-      if (column.meta?.filterConfig?.variant === 'multi-select') {
-        return {
-          ...column,
-          filterFn: 'arrIncludesSome' as FilterFnOption<TData>,
-        }
-      } else if (column.meta?.filterConfig?.variant === 'select') {
-        return {
-          ...column,
-          filterFn: 'equals' as FilterFnOption<TData>,
-        }
-      } else if (column.meta?.filterConfig?.variant === 'date-range') {
-        return {
-          ...column,
-          filterFn: (row: Row<TData>, columnId: string, filterValue: FilterValue) => {
-            const date = row.getValue<Date>(columnId)
-            if (!isDate(date)) return false
-            if (!filterValue) return true
-            if (
-              typeof filterValue === 'object' &&
-              'from' in filterValue &&
-              'to' in filterValue &&
-              filterValue.from &&
-              filterValue.to
-            ) {
-              return (
-                (isSameDay(date, filterValue.from) || isAfter(date, filterValue.from)) &&
-                (isSameDay(date, filterValue.to) || isBefore(date, filterValue.to))
-              )
-            }
-            return true
-          },
-        }
-      }
-      return column
-    })
-  }, [columns, rowSelection])
-
-  const table = useShadcnTable({
-    data,
-    columns: prepareColumns,
-    pageSize: pagination?.pageSize,
-    rowSelectionConfig: rowSelection,
-    manualPagination,
-  })
+  }
 
   return (
-    <DataTableLocaleProvider locale={mergedLocale}>
-      <div className='space-y-4'>
-        <DataTableToolbar config={toolbar} isLoading={isLoading} table={table} />
-        <div className='relative overflow-hidden rounded-md border'>
-          <Table>
-            <DataTableHeader table={table} />
-            <DataTableBody
-              emptyState={emptyState}
-              isLoading={isLoading}
-              onRowClick={onRowClick}
-              table={table}
-            />
-          </Table>
-          {isFetching && !isLoading && (
-            <div className='absolute inset-0 top-10 z-10 flex items-center justify-center'>
-              <Spinner />
-            </div>
+    <div
+      className={cn('relative overflow-hidden rounded-md border', className)}
+      aria-busy={isLoading || isFetching}
+      {...props}
+    >
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id} colSpan={header.colSpan}>
+                  {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            Array.from({ length: skeletonRowCount }, (_, rowIndex) => (
+              <TableRow key={rowIndex} data-slot='data-table-skeleton-row'>
+                {Array.from({ length: columnCount }, (_, cellIndex) => (
+                  <TableCell key={cellIndex}>
+                    <Skeleton className='h-4 w-full' />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : rows.length > 0 ? (
+            rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() ? 'selected' : undefined}
+                className={cn(onRowClick && 'cursor-pointer')}
+                tabIndex={onRowClick ? 0 : undefined}
+                onClick={onRowClick ? (event) => handleRowClick(event, row) : undefined}
+                onKeyDown={
+                  onRowClick ? (event) => handleRowKeyDown(event, row) : undefined
+                }
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    <table.FlexRender cell={cell} />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={columnCount} className='h-24'>
+                {emptyState ?? (
+                  <Empty>
+                    <EmptyHeader>
+                      <EmptyMedia variant='icon'>
+                        <Inbox />
+                      </EmptyMedia>
+                      <EmptyTitle>{locale.body.noResults}</EmptyTitle>
+                    </EmptyHeader>
+                  </Empty>
+                )}
+              </TableCell>
+            </TableRow>
           )}
+        </TableBody>
+      </Table>
+      {isFetching && !isLoading && (
+        <div className='absolute inset-0 flex items-center justify-center bg-background/50'>
+          <Spinner />
         </div>
-        <DataTablePagination
-          config={pagination}
-          rowSelection={rowSelection}
-          table={table}
-        />
-      </div>
-    </DataTableLocaleProvider>
+      )}
+    </div>
   )
 }

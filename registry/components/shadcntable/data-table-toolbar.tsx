@@ -1,42 +1,76 @@
-import { type Table } from '@tanstack/react-table'
+'use client'
 
+import type { RowData } from '@tanstack/react-table'
+import { X } from 'lucide-react'
+import type { ComponentProps } from 'react'
+
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-import { useDataTableLocale } from './contexts/data-table-locale-context'
+import { cn } from '@/lib/utils'
+
 import { DataTableViewOptions } from './data-table-view-options'
+import { useDataTableLocale } from './lib/locale'
+import type { DataTableInstance } from './lib/types'
 
-export interface DataTableToolbarConfig {
-  search?: boolean
-  viewOptions?: boolean
+interface DataTableToolbarProps<TData extends RowData> extends ComponentProps<'div'> {
+  table: DataTableInstance<TData>
+  /** Shows the global search input. Defaults to `true`. */
+  showSearch?: boolean
+  /** Shows the column visibility menu. Defaults to `true`. */
+  showViewOptions?: boolean
 }
 
-interface DataTableToolbarProps<TData> {
-  config?: DataTableToolbarConfig
-  isLoading?: boolean
-  table: Table<TData>
-}
-
-export function DataTableToolbar<TData>({
-  config,
-  isLoading,
+/**
+ * Global search, a reset button for active filters, and the view options menu.
+ * `children` render between the search input and the view options, which is
+ * the place for extra filters or actions.
+ */
+export function DataTableToolbar<TData extends RowData>({
   table,
+  showSearch = true,
+  showViewOptions = true,
+  className,
+  children,
+  ...props
 }: DataTableToolbarProps<TData>) {
   'use no memo'
   const locale = useDataTableLocale()
-  const { search = true, viewOptions = true } = config ?? {}
+  const globalFilter = (table.state.globalFilter as string | undefined) ?? ''
+  const isFiltered = globalFilter !== '' || table.state.columnFilters.length > 0
 
   return (
-    <div className='flex items-center'>
-      {search && (
+    <div className={cn('flex flex-wrap items-center gap-2', className)} {...props}>
+      {showSearch && (
         <Input
-          disabled={isLoading}
+          type='search'
+          value={globalFilter}
           placeholder={locale.toolbar.searchPlaceholder}
-          value={(table.getState().globalFilter as string) ?? ''}
+          aria-label={locale.toolbar.searchPlaceholder}
           onChange={(event) => table.setGlobalFilter(event.target.value)}
-          className='max-w-sm'
+          className='h-8 w-40 lg:w-64'
         />
       )}
-      {viewOptions && <DataTableViewOptions isLoading={isLoading} table={table} />}
+      {children}
+      {isFiltered && (
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-8'
+          onClick={() => {
+            table.resetGlobalFilter(true)
+            table.resetColumnFilters(true)
+          }}
+        >
+          {locale.toolbar.reset}
+          <X />
+        </Button>
+      )}
+      {showViewOptions && (
+        <div className='ml-auto'>
+          <DataTableViewOptions table={table} />
+        </div>
+      )}
     </div>
   )
 }

@@ -1,25 +1,40 @@
-import { Select } from '@/components/ui/select'
+'use client'
+
 import {
+  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
 
-import type { FilterComponentProps } from '../types/filters'
+import type { FilterComponentProps, FilterOption, SelectFilterValue } from '../lib/types'
 
-export function SelectFilter({ value, onChange, config }: FilterComponentProps) {
+interface SelectFilterProps extends FilterComponentProps<SelectFilterValue> {
+  options: FilterOption[]
+  placeholder?: string
+}
+
+export function SelectFilter({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: SelectFilterProps) {
   return (
     <Select
-      onValueChange={(val) => onChange(val)}
-      value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
+      value={value === undefined ? '' : String(value)}
+      onValueChange={(next) =>
+        onChange(options.find((option) => String(option.value) === next)?.value)
+      }
     >
-      <SelectTrigger className='h-8 w-full'>
-        <SelectValue placeholder={config.placeholder} />
+      <SelectTrigger size='sm' className='w-full'>
+        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
-        {config.options?.map((option) => (
+        {options.map((option) => (
           <SelectItem key={option.value} value={String(option.value)}>
+            {option.icon && <option.icon className='text-muted-foreground' />}
             {option.label}
           </SelectItem>
         ))}

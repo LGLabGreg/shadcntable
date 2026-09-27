@@ -1,642 +1,389 @@
-import { type ColumnDef } from '@tanstack/react-table'
+import type { PaginationState } from '@tanstack/react-table'
 import { screen, within } from '@testing-library/react'
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { defaultDataTableLocale } from '@/registry/components/shadcntable/config/locale'
-import { DataTable } from '@/registry/components/shadcntable/data-table'
+import { type Product, TestTable, getRenderedNames, products } from './harness'
+
 import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
+import { createSelectionColumn } from '@/registry/components/shadcntable/data-table-selection-column'
+import { createDataTableColumnHelper } from '@/registry/components/shadcntable/lib/features'
 import { render } from '@/vitest.utils'
 
-type TestUser = {
-  id: string
-  name: string
-  email: string
-  age: number
+const columnHelper = createDataTableColumnHelper<Product>()
+
+const columns = columnHelper.columns([
+  columnHelper.accessor('name', {
+    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    cell: ({ getValue }) => <span data-testid='name'>{getValue()}</span>,
+    meta: { label: 'Name' },
+  }),
+  columnHelper.accessor('category', {
+    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    meta: { label: 'Category' },
+  }),
+  columnHelper.accessor('price', {
+    header: ({ column }) => <DataTableColumnHeader column={column} />,
+    meta: { label: 'Price' },
+  }),
+])
+
+const selectableColumns = columnHelper.columns([
+  createSelectionColumn<Product>(),
+  ...columns,
+])
+
+const manyProducts: Product[] = Array.from({ length: 25 }, (_, index) => ({
+  ...products[index % products.length],
+  id: String(index),
+  name: `Product ${index + 1}`,
+}))
+
+function bodyRows() {
+  return within(document.querySelector('tbody')!).getAllByRole('row')
 }
 
-const testData: TestUser[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', age: 30 },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', age: 25 },
-  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', age: 40 },
-]
+describe('DataTable rendering', () => {
+  it('renders headers and rows', () => {
+    render(<TestTable columns={columns} data={products} />)
 
-const columns: ColumnDef<TestUser>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
-  },
-  {
-    accessorKey: 'email',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
-  },
-  {
-    accessorKey: 'age',
-    header: ({ column }) => <DataTableColumnHeader column={column} title='Age' />,
-  },
-]
-
-describe('DataTable', () => {
-  it('renders with data', () => {
-    render(<DataTable columns={columns} data={testData} />)
-
-    expect(screen.getByText('John Doe')).toBeInTheDocument()
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument()
-    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Name' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Category' })).toBeInTheDocument()
+    expect(getRenderedNames()).toEqual(products.map((product) => product.name))
   })
 
-  it('renders column headers', () => {
-    render(<DataTable columns={columns} data={testData} />)
-
-    expect(screen.getByText('Name')).toBeInTheDocument()
-    expect(screen.getByText('Email')).toBeInTheDocument()
-    expect(screen.getByText('Age')).toBeInTheDocument()
+  it('renders the default empty state', () => {
+    render(<TestTable columns={columns} data={[]} />)
+    expect(screen.getByText('No results.')).toBeInTheDocument()
   })
 
-  it('renders all data cells', () => {
-    render(<DataTable columns={columns} data={testData} />)
-
-    expect(screen.getByText('john@example.com')).toBeInTheDocument()
-    expect(screen.getByText('jane@example.com')).toBeInTheDocument()
-    expect(screen.getByText('bob@example.com')).toBeInTheDocument()
-
-    expect(screen.getByText('30')).toBeInTheDocument()
-    expect(screen.getByText('25')).toBeInTheDocument()
-    expect(screen.getByText('40')).toBeInTheDocument()
-  })
-
-  it('renders empty state when no data provided', () => {
-    render(<DataTable columns={columns} data={[]} />)
-
-    expect(screen.getByText(defaultDataTableLocale.body.noResults)).toBeInTheDocument()
-  })
-
-  it('renders custom empty state', () => {
+  it('renders a custom empty state', () => {
     render(
-      <DataTable columns={columns} data={[]} emptyState={<div>No users found</div>} />,
-    )
-
-    expect(screen.getByText('No users found')).toBeInTheDocument()
-  })
-
-  it('renders loading state', () => {
-    render(<DataTable columns={columns} data={[]} isLoading />)
-
-    // Should show skeleton rows instead of "No results"
-    expect(
-      screen.queryByText(defaultDataTableLocale.body.noResults),
-    ).not.toBeInTheDocument()
-  })
-
-  it('calls onRowClick when row is clicked', async () => {
-    const handleRowClick = vi.fn()
-
-    const { user } = render(
-      <DataTable columns={columns} data={testData} onRowClick={handleRowClick} />,
-    )
-
-    const row = screen.getByText('John Doe').closest('tr')
-    if (row) {
-      await user.click(row)
-    }
-
-    expect(handleRowClick).toHaveBeenCalledWith(testData[0])
-  })
-})
-
-describe('DataTable with isFetching', () => {
-  it('shows overlay with spinner when isFetching is true', () => {
-    render(<DataTable columns={columns} data={testData} isFetching />)
-
-    // Spinner should be present (has role="status" and aria-label="Loading")
-    const spinner = screen.getByRole('status', { name: 'Loading' })
-    expect(spinner).toBeInTheDocument()
-  })
-
-  it('keeps existing rows visible when isFetching is true', () => {
-    render(<DataTable columns={columns} data={testData} isFetching />)
-
-    // Existing rows should still be visible
-    expect(screen.getByText('John Doe')).toBeInTheDocument()
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument()
-    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
-  })
-
-  it('does not show overlay when isFetching is false', () => {
-    render(<DataTable columns={columns} data={testData} isFetching={false} />)
-
-    // Overlay should not be present
-    const overlay = document.querySelector('.absolute.inset-0.top-10')
-    expect(overlay).not.toBeInTheDocument()
-  })
-
-  it('shows skeleton rows when isLoading is true, even with isFetching', () => {
-    render(<DataTable columns={columns} data={[]} isLoading isFetching />)
-
-    // Should show skeleton rows (isLoading takes precedence for empty data)
-    expect(
-      screen.queryByText(defaultDataTableLocale.body.noResults),
-    ).not.toBeInTheDocument()
-
-    // Should not show actual data rows
-    expect(screen.queryByText('John Doe')).not.toBeInTheDocument()
-  })
-
-  it('isLoading takes precedence over isFetching - shows skeletons when isLoading is true', () => {
-    render(<DataTable columns={columns} data={testData} isLoading isFetching />)
-
-    // Should show skeleton rows (isLoading returns early)
-    expect(
-      screen.queryByText(defaultDataTableLocale.body.noResults),
-    ).not.toBeInTheDocument()
-
-    // Should not show actual data rows
-    expect(screen.queryByText('John Doe')).not.toBeInTheDocument()
-
-    // Overlay should not be present because isLoading returns early
-    const overlay = document.querySelector('.absolute.inset-0.top-10')
-    expect(overlay).not.toBeInTheDocument()
-  })
-})
-
-describe('DataTable with pagination', () => {
-  const manyUsers: TestUser[] = Array.from({ length: 25 }, (_, i) => ({
-    id: String(i + 1),
-    name: `User ${i + 1}`,
-    email: `user${i + 1}@example.com`,
-    age: 20 + i,
-  }))
-
-  it('renders pagination controls', () => {
-    render(<DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 10 }} />)
-
-    // Should show pagination text
-    expect(screen.getByText(/Page 1 of/)).toBeInTheDocument()
-  })
-
-  it('shows correct number of rows per page', () => {
-    render(<DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 5 }} />)
-
-    // Should only show 5 rows
-    const rows = screen.getAllByRole('row')
-    // Header row + 5 data rows
-    expect(rows).toHaveLength(6)
-  })
-
-  it('navigates to next page', async () => {
-    const { user } = render(
-      <DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 10 }} />,
-    )
-
-    expect(screen.getByText('User 1')).toBeInTheDocument()
-    expect(screen.queryByText('User 11')).not.toBeInTheDocument()
-
-    const nextButton = screen.getByRole('button', { name: /next/i })
-    await user.click(nextButton)
-
-    expect(screen.queryByText('User 1')).not.toBeInTheDocument()
-    expect(screen.getByText('User 11')).toBeInTheDocument()
-  })
-
-  it('changes page size when selecting from dropdown', async () => {
-    const { user } = render(
-      <DataTable
-        columns={columns}
-        data={manyUsers}
-        pagination={{ pageSize: 10, pageSizeOptions: [10, 25, 50] }}
-      />,
-    )
-
-    // Initially should show 10 rows
-    let rows = screen.getAllByRole('row')
-    expect(rows).toHaveLength(11) // Header + 10 data rows
-
-    // Click the page size select trigger
-    const selectTrigger = screen.getByRole('combobox')
-    await user.click(selectTrigger)
-
-    // Select 25 rows per page
-    const option25 = screen.getByRole('option', { name: '25' })
-    await user.click(option25)
-
-    // Should now show 25 rows
-    rows = screen.getAllByRole('row')
-    expect(rows).toHaveLength(26) // Header + 25 data rows
-  })
-
-  it('navigates to first page when clicking first page button', async () => {
-    const { user } = render(
-      <DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 10 }} />,
-    )
-
-    // Go to page 2 first
-    const nextButton = screen.getByRole('button', { name: /next/i })
-    await user.click(nextButton)
-
-    expect(screen.getByText('User 11')).toBeInTheDocument()
-    expect(screen.queryByText('User 1')).not.toBeInTheDocument()
-
-    // Click first page button
-    const firstPageButton = screen.getByRole('button', {
-      name: defaultDataTableLocale.pagination.goToFirstPage,
-    })
-    await user.click(firstPageButton)
-
-    // Should be back on first page
-    expect(screen.getByText('User 1')).toBeInTheDocument()
-    expect(screen.queryByText('User 11')).not.toBeInTheDocument()
-  })
-
-  it('navigates to last page when clicking last page button', async () => {
-    const { user } = render(
-      <DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 10 }} />,
-    )
-
-    // Initially on first page
-    expect(screen.getByText('User 1')).toBeInTheDocument()
-
-    // Click last page button
-    const lastPageButton = screen.getByRole('button', {
-      name: defaultDataTableLocale.pagination.goToLastPage,
-    })
-    await user.click(lastPageButton)
-
-    // Should be on last page (users 21-25)
-    expect(screen.getByText('User 21')).toBeInTheDocument()
-    expect(screen.queryByText('User 1')).not.toBeInTheDocument()
-  })
-
-  it('navigates to previous page when clicking previous page button', async () => {
-    const { user } = render(
-      <DataTable columns={columns} data={manyUsers} pagination={{ pageSize: 10 }} />,
-    )
-
-    // Go to page 2 first
-    const nextButton = screen.getByRole('button', { name: /next/i })
-    await user.click(nextButton)
-
-    expect(screen.getByText('User 11')).toBeInTheDocument()
-
-    // Click previous page button
-    const prevButton = screen.getByRole('button', {
-      name: defaultDataTableLocale.pagination.goToPreviousPage,
-    })
-    await user.click(prevButton)
-
-    // Should be back on first page
-    expect(screen.getByText('User 1')).toBeInTheDocument()
-    expect(screen.queryByText('User 11')).not.toBeInTheDocument()
-  })
-
-  it('supports manual/server-side pagination with onPaginationChange', async () => {
-    const handlePaginationChange = vi.fn()
-
-    const { user, rerender } = render(
-      <DataTable
-        columns={columns}
-        data={manyUsers.slice(0, 10)}
-        pagination={{
-          manual: true,
-          pageIndex: 0,
-          pageSize: 10,
-          rowCount: manyUsers.length,
-          onPaginationChange: handlePaginationChange,
-        }}
-      />,
-    )
-
-    // Initially on first page
-    expect(screen.getByText('User 1')).toBeInTheDocument()
-    expect(screen.queryByText('User 11')).not.toBeInTheDocument()
-
-    const nextButton = screen.getByRole('button', { name: /next/i })
-    await user.click(nextButton)
-
-    expect(handlePaginationChange).toHaveBeenCalledWith({ pageIndex: 1, pageSize: 10 })
-
-    // Simulate consumer updating external state and providing new page data
-    rerender(
-      <DataTable
-        columns={columns}
-        data={manyUsers.slice(10, 20)}
-        pagination={{
-          manual: true,
-          pageIndex: 1,
-          pageSize: 10,
-          rowCount: manyUsers.length,
-          onPaginationChange: handlePaginationChange,
-        }}
-      />,
-    )
-
-    expect(screen.getByText('User 11')).toBeInTheDocument()
-    expect(screen.queryByText('User 1')).not.toBeInTheDocument()
-  })
-})
-
-describe('DataTable with row selection', () => {
-  it('renders selection checkboxes', () => {
-    render(
-      <DataTable
-        columns={columns}
-        data={testData}
-        rowSelection={{ onRowSelectionChange: vi.fn() }}
-      />,
-    )
-
-    const checkboxes = screen.getAllByRole('checkbox')
-    // Header checkbox + 3 row checkboxes
-    expect(checkboxes).toHaveLength(4)
-  })
-
-  it('selects a single row', async () => {
-    const handleSelectionChange = vi.fn()
-
-    const { user } = render(
-      <DataTable
-        columns={columns}
-        data={testData}
-        rowSelection={{
-          onRowSelectionChange: handleSelectionChange,
-        }}
-      />,
-    )
-
-    const checkboxes = screen.getAllByRole('checkbox')
-    // Click the first row's checkbox (index 1, as 0 is the header)
-    await user.click(checkboxes[1])
-
-    expect(handleSelectionChange).toHaveBeenCalledWith([testData[0]])
-  })
-
-  it('selects all rows via header checkbox', async () => {
-    const handleSelectionChange = vi.fn()
-
-    const { user } = render(
-      <DataTable
-        columns={columns}
-        data={testData}
-        rowSelection={{
-          onRowSelectionChange: handleSelectionChange,
-        }}
-      />,
-    )
-
-    const headerCheckbox = screen.getAllByRole('checkbox')[0]
-    await user.click(headerCheckbox)
-
-    expect(handleSelectionChange).toHaveBeenCalledWith(testData)
-  })
-})
-
-describe('DataTable localization', () => {
-  it('uses custom locale strings', () => {
-    render(
-      <DataTable
+      <TestTable
         columns={columns}
         data={[]}
+        tableProps={{ emptyState: <p>Nothing here</p> }}
+      />,
+    )
+    expect(screen.getByText('Nothing here')).toBeInTheDocument()
+  })
+
+  it('renders skeleton rows while loading', () => {
+    render(
+      <TestTable
+        columns={columns}
+        data={products}
+        tableProps={{ isLoading: true, skeletonRowCount: 3 }}
+      />,
+    )
+    expect(getRenderedNames()).toEqual([])
+    expect(bodyRows()).toHaveLength(3)
+  })
+
+  it('overlays a spinner on the current rows while fetching', () => {
+    render(
+      <TestTable columns={columns} data={products} tableProps={{ isFetching: true }} />,
+    )
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(getRenderedNames()).toHaveLength(products.length)
+  })
+
+  it('shows skeletons rather than the spinner when loading and fetching', () => {
+    render(
+      <TestTable
+        columns={columns}
+        data={products}
+        tableProps={{ isLoading: true, isFetching: true }}
+      />,
+    )
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+})
+
+describe('DataTable row clicks', () => {
+  it('calls onRowClick with the row', async () => {
+    const onRowClick = vi.fn()
+    const { user } = render(
+      <TestTable columns={columns} data={products} tableProps={{ onRowClick }} />,
+    )
+
+    await user.click(screen.getByText('Office Chair'))
+
+    expect(onRowClick).toHaveBeenCalledOnce()
+    expect(onRowClick.mock.calls[0][0].original).toBe(products[2])
+  })
+
+  it('supports Enter on a focused row', async () => {
+    const onRowClick = vi.fn()
+    const { user } = render(
+      <TestTable columns={columns} data={products} tableProps={{ onRowClick }} />,
+    )
+
+    bodyRows()[0].focus()
+    await user.keyboard('{Enter}')
+
+    expect(onRowClick).toHaveBeenCalledOnce()
+  })
+
+  it('ignores clicks on interactive elements inside the row', async () => {
+    const onRowClick = vi.fn()
+    const { user } = render(
+      <TestTable
+        columns={selectableColumns}
+        data={products}
+        tableProps={{ onRowClick }}
+      />,
+    )
+
+    await user.click(screen.getAllByRole('checkbox', { name: 'Select row' })[0])
+
+    expect(onRowClick).not.toHaveBeenCalled()
+  })
+})
+
+describe('DataTable pagination', () => {
+  it('shows the first page and the page count', () => {
+    render(<TestTable columns={columns} data={manyProducts} />)
+
+    expect(getRenderedNames()).toHaveLength(10)
+    expect(screen.getByText('Page 1 of 3')).toBeInTheDocument()
+  })
+
+  it('navigates between pages', async () => {
+    const { user } = render(<TestTable columns={columns} data={manyProducts} />)
+
+    await user.click(screen.getByRole('button', { name: 'Go to next page' }))
+    expect(screen.getByText('Page 2 of 3')).toBeInTheDocument()
+    expect(getRenderedNames()[0]).toBe('Product 11')
+
+    await user.click(screen.getByRole('button', { name: 'Go to last page' }))
+    expect(screen.getByText('Page 3 of 3')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Go to next page' })).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Go to previous page' }))
+    expect(screen.getByText('Page 2 of 3')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Go to first page' }))
+    expect(screen.getByText('Page 1 of 3')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Go to previous page' })).toBeDisabled()
+  })
+
+  it('changes the page size', async () => {
+    const { user } = render(<TestTable columns={columns} data={manyProducts} />)
+
+    await user.click(screen.getByRole('combobox', { name: 'Rows per page' }))
+    await user.click(screen.getByRole('option', { name: '20' }))
+
+    expect(getRenderedNames()).toHaveLength(20)
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument()
+  })
+
+  it('respects the initial page size', () => {
+    render(
+      <TestTable
+        columns={columns}
+        data={manyProducts}
+        initialState={{ pagination: { pageIndex: 0, pageSize: 5 } }}
+      />,
+    )
+    expect(getRenderedNames()).toHaveLength(5)
+  })
+
+  it('supports server-side pagination with controlled state', async () => {
+    const onPaginationChange = vi.fn()
+
+    function ServerTable() {
+      const [pagination, setPagination] = useState<PaginationState>({
+        pageIndex: 0,
+        pageSize: 10,
+      })
+      return (
+        <TestTable
+          columns={columns}
+          data={manyProducts.slice(0, 10)}
+          manualPagination
+          rowCount={95}
+          state={{ pagination }}
+          onPaginationChange={(updater) => {
+            setPagination(updater)
+            onPaginationChange(updater)
+          }}
+        />
+      )
+    }
+
+    const { user } = render(<ServerTable />)
+    expect(screen.getByText('Page 1 of 10')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Go to next page' }))
+
+    expect(screen.getByText('Page 2 of 10')).toBeInTheDocument()
+    expect(onPaginationChange).toHaveBeenCalledOnce()
+    // Manual mode renders the data as given, without slicing it.
+    expect(getRenderedNames()).toHaveLength(10)
+  })
+})
+
+describe('DataTable row selection', () => {
+  it('selects a single row', async () => {
+    const { user } = render(<TestTable columns={selectableColumns} data={products} />)
+
+    await user.click(screen.getAllByRole('checkbox', { name: 'Select row' })[0])
+
+    expect(bodyRows()[0]).toHaveAttribute('data-state', 'selected')
+    expect(screen.getByText('1 of 5 row(s) selected.')).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Select all' })).toHaveAttribute(
+      'data-state',
+      'indeterminate',
+    )
+  })
+
+  it('selects every row on the page from the header', async () => {
+    const { user } = render(<TestTable columns={selectableColumns} data={products} />)
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select all' }))
+
+    expect(screen.getByText('5 of 5 row(s) selected.')).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Select all' })).toHaveAttribute(
+      'data-state',
+      'checked',
+    )
+  })
+
+  it('disables rows that cannot be selected', () => {
+    render(
+      <TestTable
+        columns={selectableColumns}
+        data={products}
+        enableRowSelection={(row) => row.original.status === 'active'}
+      />,
+    )
+
+    const checkboxes = screen.getAllByRole('checkbox', { name: 'Select row' })
+    expect(
+      checkboxes.filter((checkbox) => checkbox.hasAttribute('disabled')),
+    ).toHaveLength(2)
+  })
+
+  it('hides the selected count without a selection column', () => {
+    render(<TestTable columns={columns} data={products} />)
+    expect(screen.queryByText(/row\(s\) selected/)).not.toBeInTheDocument()
+  })
+})
+
+describe('DataTable sorting', () => {
+  it('sorts from the column header menu', async () => {
+    const { user } = render(<TestTable columns={columns} data={products} />)
+
+    await user.click(screen.getByRole('button', { name: 'Price' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Sort ascending' }))
+    expect(getRenderedNames()).toEqual([
+      'Wireless Mouse',
+      'Office Chair',
+      'Monitor',
+      'Standing Desk',
+      'Laptop Pro',
+    ])
+
+    await user.click(screen.getByRole('button', { name: 'Price' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Sort descending' }))
+    expect(getRenderedNames()[0]).toBe('Laptop Pro')
+
+    await user.click(screen.getByRole('button', { name: 'Price' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Clear sorting' }))
+    expect(getRenderedNames()).toEqual(products.map((product) => product.name))
+  })
+
+  it('renders a plain title for columns that cannot sort, hide or filter', () => {
+    const staticColumns = columnHelper.columns([
+      columnHelper.accessor('name', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+        enableSorting: false,
+        enableHiding: false,
+      }),
+    ])
+    render(<TestTable columns={staticColumns} data={products} />)
+
+    expect(screen.getByText('Name')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Name' })).not.toBeInTheDocument()
+  })
+})
+
+describe('DataTable column visibility', () => {
+  it('hides a column from its header menu', async () => {
+    const { user } = render(<TestTable columns={columns} data={products} />)
+
+    await user.click(screen.getByRole('button', { name: 'Category' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Hide column' }))
+
+    expect(screen.queryByRole('button', { name: 'Category' })).not.toBeInTheDocument()
+  })
+
+  it('toggles columns from the view options menu', async () => {
+    const { user } = render(<TestTable columns={columns} data={products} />)
+
+    await user.click(screen.getByRole('button', { name: 'View' }))
+    const option = screen.getByRole('menuitemcheckbox', { name: 'Category' })
+    expect(option).toHaveAttribute('data-state', 'checked')
+
+    await user.click(option)
+    expect(screen.queryByRole('button', { name: 'Category' })).not.toBeInTheDocument()
+
+    // The menu stays open, so the column can be toggled straight back on.
+    await user.click(screen.getByRole('menuitemcheckbox', { name: 'Category' }))
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('button', { name: 'Category' })).toBeInTheDocument()
+  })
+
+  it('does not list the selection column in view options', async () => {
+    const { user } = render(<TestTable columns={selectableColumns} data={products} />)
+
+    await user.click(screen.getByRole('button', { name: 'View' }))
+
+    expect(screen.getAllByRole('menuitemcheckbox')).toHaveLength(3)
+  })
+})
+
+describe('DataTable global search', () => {
+  it('filters rows and resets', async () => {
+    const { user } = render(<TestTable columns={columns} data={products} />)
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search...' }), 'furn')
+    expect(getRenderedNames()).toEqual(['Office Chair', 'Standing Desk'])
+
+    await user.click(screen.getByRole('button', { name: 'Reset' }))
+    expect(getRenderedNames()).toHaveLength(products.length)
+    expect(screen.getByRole('searchbox')).toHaveValue('')
+  })
+
+  it('shows the empty state when nothing matches', async () => {
+    const { user } = render(<TestTable columns={columns} data={products} />)
+
+    await user.type(screen.getByRole('searchbox'), 'zzz')
+
+    expect(screen.getByText('No results.')).toBeInTheDocument()
+  })
+})
+
+describe('DataTable locale', () => {
+  it('merges overrides with the default strings', async () => {
+    const { user } = render(
+      <TestTable
+        columns={selectableColumns}
+        data={manyProducts}
         locale={{
-          body: {
-            noResults: 'Keine Ergebnisse',
-          },
+          toolbar: { searchPlaceholder: 'Rechercher...' },
+          pagination: { pageOf: (page, count) => `Page ${page} sur ${count}` },
         }}
       />,
     )
 
-    expect(screen.getByText('Keine Ergebnisse')).toBeInTheDocument()
-  })
-})
+    expect(screen.getByPlaceholderText('Rechercher...')).toBeInTheDocument()
+    expect(screen.getByText('Page 1 sur 3')).toBeInTheDocument()
+    // Strings that were not overridden keep their defaults.
+    expect(screen.getByRole('button', { name: 'Go to next page' })).toBeInTheDocument()
 
-describe('DataTable Toolbar', () => {
-  it('filters data globally when typing in search input', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    // All users should be visible initially
-    expect(screen.getByText('John Doe')).toBeInTheDocument()
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument()
-    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
-
-    // Find the search input by placeholder
-    const searchInput = screen.getByPlaceholderText(
-      defaultDataTableLocale.toolbar.searchPlaceholder,
-    )
-    await user.type(searchInput, 'John')
-
-    // Only John Doe and Bob Johnson should be visible (both contain "John")
-    expect(screen.getByText('John Doe')).toBeInTheDocument()
-    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
-    expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument()
-  })
-
-  it('shows no results when global search matches nothing', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    const searchInput = screen.getByPlaceholderText(
-      defaultDataTableLocale.toolbar.searchPlaceholder,
-    )
-    await user.type(searchInput, 'XYZ123')
-
-    expect(screen.getByText(defaultDataTableLocale.body.noResults)).toBeInTheDocument()
-  })
-
-  it('clears global search and shows all data', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    const searchInput = screen.getByPlaceholderText(
-      defaultDataTableLocale.toolbar.searchPlaceholder,
-    )
-    await user.type(searchInput, 'John')
-
-    expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument()
-
-    await user.clear(searchInput)
-
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument()
-    expect(screen.getByText('John Doe')).toBeInTheDocument()
-    expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
-  })
-})
-
-describe('DataTable View Options', () => {
-  it('toggles column visibility via view options dropdown', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    // Email column should be visible initially
-    expect(screen.getByText('Email')).toBeInTheDocument()
-    expect(screen.getByText('john@example.com')).toBeInTheDocument()
-
-    // Open view options dropdown
-    const viewButton = screen.getByRole('button', {
-      name: defaultDataTableLocale.viewOptions.view,
-    })
-    await user.click(viewButton)
-
-    // Find the email checkbox and uncheck it
-    const emailCheckbox = screen.getByRole('menuitemcheckbox', { name: /email/i })
-    await user.click(emailCheckbox)
-
-    // Email column should now be hidden
-    expect(screen.queryByText('Email')).not.toBeInTheDocument()
-    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument()
-
-    // Other columns should still be visible
-    expect(screen.getByText('Name')).toBeInTheDocument()
-    expect(screen.getByText('Age')).toBeInTheDocument()
-  })
-
-  it('shows column again when checkbox is re-checked', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    // Open view options dropdown and hide email column
-    const viewButton = screen.getByRole('button', {
-      name: defaultDataTableLocale.viewOptions.view,
-    })
-    await user.click(viewButton)
-
-    const emailCheckbox = screen.getByRole('menuitemcheckbox', { name: /email/i })
-    await user.click(emailCheckbox)
-
-    // Email should be hidden
-    expect(screen.queryByText('Email')).not.toBeInTheDocument()
-
-    // Re-open dropdown and re-check email
-    await user.click(viewButton)
-    const emailCheckboxAgain = screen.getByRole('menuitemcheckbox', { name: /email/i })
-    await user.click(emailCheckboxAgain)
-
-    // Email column should be visible again
-    expect(screen.getByText('Email')).toBeInTheDocument()
-    expect(screen.getByText('john@example.com')).toBeInTheDocument()
-  })
-})
-
-describe('DataTable Column Header', () => {
-  // Columns with sorting disabled and no filter
-  const columnsWithoutSortAndFilter: ColumnDef<TestUser>[] = [
-    {
-      accessorKey: 'name',
-      header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
-      enableSorting: false,
-    },
-    {
-      accessorKey: 'email',
-      header: ({ column }) => <DataTableColumnHeader column={column} title='Email' />,
-    },
-  ]
-
-  it('renders just title text when column cannot sort and has no filter', () => {
-    render(<DataTable columns={columnsWithoutSortAndFilter} data={testData} />)
-
-    // The Name column header should just be plain text without sorting controls
-    const nameHeader = screen.getByText('Name').closest('th')
-    // Should not have sort button in name column (since enableSorting: false and no filter)
-    expect(
-      within(nameHeader!).queryByRole('button', {
-        name: defaultDataTableLocale.columnHeader.sortMenuLabel,
-      }),
-    ).not.toBeInTheDocument()
-  })
-
-  it('sorts ascending when clicking sort ascending menu item', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    // Open sort dropdown for Name column
-    const nameHeader = screen.getByText('Name').closest('th')
-    const sortButton = within(nameHeader!).getByRole('button', {
-      name: defaultDataTableLocale.columnHeader.sortMenuLabel,
-    })
-    await user.click(sortButton)
-
-    // Click sort ascending
-    const sortAscItem = screen.getByRole('menuitem', {
-      name: defaultDataTableLocale.columnHeader.sortAscending,
-    })
-    await user.click(sortAscItem)
-
-    // Check data is sorted ascending (Bob, Jane, John)
-    const rows = screen.getAllByRole('row')
-    expect(within(rows[1]).getByText('Bob Johnson')).toBeInTheDocument()
-    expect(within(rows[2]).getByText('Jane Smith')).toBeInTheDocument()
-    expect(within(rows[3]).getByText('John Doe')).toBeInTheDocument()
-  })
-
-  it('sorts descending when clicking sort descending menu item', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    // Open sort dropdown for Name column
-    const nameHeader = screen.getByText('Name').closest('th')
-    const sortButton = within(nameHeader!).getByRole('button', {
-      name: defaultDataTableLocale.columnHeader.sortMenuLabel,
-    })
-    await user.click(sortButton)
-
-    // Click sort descending
-    const sortDescItem = screen.getByRole('menuitem', {
-      name: defaultDataTableLocale.columnHeader.sortDescending,
-    })
-    await user.click(sortDescItem)
-
-    // Check data is sorted descending (John, Jane, Bob)
-    const rows = screen.getAllByRole('row')
-    expect(within(rows[1]).getByText('John Doe')).toBeInTheDocument()
-    expect(within(rows[2]).getByText('Jane Smith')).toBeInTheDocument()
-    expect(within(rows[3]).getByText('Bob Johnson')).toBeInTheDocument()
-  })
-
-  it('clears sorting when clicking clear sorting menu item', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    // First, sort ascending
-    const nameHeader = screen.getByText('Name').closest('th')
-    const sortButton = within(nameHeader!).getByRole('button', {
-      name: defaultDataTableLocale.columnHeader.sortMenuLabel,
-    })
-    await user.click(sortButton)
-
-    const sortAscItem = screen.getByRole('menuitem', {
-      name: defaultDataTableLocale.columnHeader.sortAscending,
-    })
-    await user.click(sortAscItem)
-
-    // Verify sorted
-    let rows = screen.getAllByRole('row')
-    expect(within(rows[1]).getByText('Bob Johnson')).toBeInTheDocument()
-
-    // Open dropdown again and clear sorting
-    await user.click(sortButton)
-    const clearSortItem = screen.getByRole('menuitem', {
-      name: defaultDataTableLocale.columnHeader.clearSorting,
-    })
-    await user.click(clearSortItem)
-
-    // Data should be back to original order
-    rows = screen.getAllByRole('row')
-    expect(within(rows[1]).getByText('John Doe')).toBeInTheDocument()
-    expect(within(rows[2]).getByText('Jane Smith')).toBeInTheDocument()
-    expect(within(rows[3]).getByText('Bob Johnson')).toBeInTheDocument()
-  })
-
-  it('hides column when clicking hide column menu item', async () => {
-    const { user } = render(<DataTable columns={columns} data={testData} />)
-
-    // Verify Email column is visible
-    expect(screen.getByText('Email')).toBeInTheDocument()
-    expect(screen.getByText('john@example.com')).toBeInTheDocument()
-
-    // Open sort dropdown for Email column
-    const emailHeader = screen.getByText('Email').closest('th')
-    const sortButton = within(emailHeader!).getByRole('button', {
-      name: defaultDataTableLocale.columnHeader.sortMenuLabel,
-    })
-    await user.click(sortButton)
-
-    // Click hide column
-    const hideColumnItem = screen.getByRole('menuitem', {
-      name: defaultDataTableLocale.columnHeader.hideColumn,
-    })
-    await user.click(hideColumnItem)
-
-    // Email column should now be hidden
-    expect(screen.queryByText('Email')).not.toBeInTheDocument()
-    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument()
+    await user.type(screen.getByRole('searchbox'), 'zzz')
+    expect(screen.getByText('No results.')).toBeInTheDocument()
   })
 })
