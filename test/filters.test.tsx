@@ -253,6 +253,20 @@ describe('date range filter', () => {
     expect(getRenderedNames()).toEqual(['Laptop Pro', 'Monitor'])
   })
 
+  it('treats a missing start as open', () => {
+    render(
+      <TestTable
+        columns={columns}
+        data={products}
+        initialState={{
+          columnFilters: [{ id: 'createdAt', value: { to: new Date(2024, 1, 20) } }],
+        }}
+      />,
+    )
+
+    expect(getRenderedNames()).toEqual(['Laptop Pro', 'Wireless Mouse'])
+  })
+
   it('picks a range with the calendar', async () => {
     const { user } = render(
       <TestTable
@@ -332,5 +346,32 @@ describe('combined filters', () => {
 
     expect(getRenderedNames()).toHaveLength(products.length)
     expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument()
+  })
+})
+
+describe('filter-only column header', () => {
+  it('shows the column id as a plain title with the filter button', async () => {
+    const filterOnlyColumns = columnHelper.columns([
+      columnHelper.accessor('name', {
+        header: ({ column }) => <DataTableColumnHeader column={column} />,
+        cell: ({ getValue }) => <span data-testid='name'>{getValue()}</span>,
+        enableSorting: false,
+        enableHiding: false,
+        meta: {
+          filter: {
+            variant: 'text',
+            description: 'Matches part of the name',
+            debounceMs: 0,
+          },
+        },
+      }),
+    ])
+    const { user } = render(<TestTable columns={filterOnlyColumns} data={products} />)
+
+    expect(screen.queryByRole('button', { name: 'name' })).not.toBeInTheDocument()
+    expect(screen.getByText('name')).toBeInTheDocument()
+
+    const popover = await openFilter(user, 'name')
+    expect(within(popover).getByText('Matches part of the name')).toBeInTheDocument()
   })
 })
