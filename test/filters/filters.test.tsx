@@ -1,13 +1,14 @@
-import { defaultDataTableLocale } from '@/registry/components/shadcntable/config/locale'
-import { DataTable } from '@/registry/components/shadcntable/data-table'
-import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
-import type { FilterComponentProps } from '@/registry/components/shadcntable/types/filters'
-import { render } from '@/vitest.utils'
 import { type ColumnDef } from '@tanstack/react-table'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import type userEvent from '@testing-library/user-event'
 import { type DateRange } from 'react-day-picker'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { defaultDataTableLocale } from '@/registry/components/shadcntable/config/locale'
+import { DataTable } from '@/registry/components/shadcntable/data-table'
+import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
+import type { FilterComponentProps } from '@/registry/components/shadcntable/types/filters'
+import { render } from '@/vitest.utils'
 
 type Product = {
   id: string

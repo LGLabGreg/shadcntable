@@ -7,7 +7,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-interface PropDefinition {
+import { type PropsTableId, propsTables } from './props-table-data'
+
+export interface PropDefinition {
   name: string
   type: string
   default?: string
@@ -15,10 +17,11 @@ interface PropDefinition {
 }
 
 interface PropsTableProps {
-  data: PropDefinition[]
+  id: PropsTableId
 }
 
-export function PropsTable({ data }: PropsTableProps) {
+export function PropsTable({ id }: PropsTableProps) {
+  const data: PropDefinition[] = propsTables[id]
   return (
     <div className='my-6 overflow-hidden rounded-lg border'>
       <Table>

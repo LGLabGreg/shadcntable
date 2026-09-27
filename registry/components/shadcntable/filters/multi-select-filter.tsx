@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,7 @@ import type { FilterComponentProps } from '../types/filters'
 export function MultiSelectFilter({ value, onChange, config }: FilterComponentProps) {
   const locale = useDataTableLocale()
   const [open, setOpen] = useState(false)
+  const listboxId = useId()
 
   const options = config.options ?? []
   const currentValue = useMemo(() => (Array.isArray(value) ? value : []), [value])
@@ -42,6 +43,7 @@ export function MultiSelectFilter({ value, onChange, config }: FilterComponentPr
           variant='outline'
           role='combobox'
           aria-expanded={open}
+          aria-controls={listboxId}
           className='w-full justify-between'
         >
           {selectedOptions?.length > 0 ? (
@@ -57,7 +59,7 @@ export function MultiSelectFilter({ value, onChange, config }: FilterComponentPr
           <ChevronsUpDown className='opacity-50' />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className='w-full p-0'>
+      <PopoverContent id={listboxId} className='w-full p-0'>
         <Command>
           <CommandInput placeholder={locale.filters.multiSelect.search} className='h-9' />
           <CommandList>

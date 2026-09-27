@@ -21,7 +21,11 @@ export function TextFilter({ value, onChange, config }: FilterComponentProps) {
   return (
     <Input
       placeholder={config.placeholder}
-      value={localValue?.toString() ?? ''}
+      value={
+        typeof localValue === 'string' || typeof localValue === 'number'
+          ? String(localValue)
+          : ''
+      }
       onChange={(e) => {
         setLocalValue(e.target.value)
         debouncedOnChange(e.target.value)

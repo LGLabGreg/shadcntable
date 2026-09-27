@@ -1,7 +1,5 @@
 'use client'
 
-import { DataTable } from '@/registry/components/shadcntable/data-table'
-import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
 import { faker } from '@faker-js/faker'
 import { type ColumnDef } from '@tanstack/react-table'
 import { MoreHorizontal } from 'lucide-react'
@@ -20,6 +18,9 @@ import { type Person, makeData } from '@/lib/makeData'
 
 import { Checkbox } from './ui/checkbox'
 import { Label } from './ui/label'
+
+import { DataTable } from '@/registry/components/shadcntable/data-table'
+import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
 
 faker.seed(123)
 const data = makeData(100)
@@ -188,7 +189,9 @@ export const columns: ColumnDef<Person>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(person.email)}>
+            <DropdownMenuItem
+              onClick={() => void navigator.clipboard.writeText(person.email)}
+            >
               Copy email
             </DropdownMenuItem>
             <DropdownMenuSeparator />

@@ -25,7 +25,7 @@ export function CopyButton({ text, className }: CopyButtonProps) {
     <Button
       variant='ghost'
       size='icon-sm'
-      onClick={handleCopy}
+      onClick={() => void handleCopy()}
       className={cn(
         'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 transition-colors',
         className,

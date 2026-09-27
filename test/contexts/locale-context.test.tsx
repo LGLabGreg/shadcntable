@@ -1,7 +1,8 @@
-import { defaultDataTableLocale } from '@/registry/components/shadcntable/config/locale'
-import { useDataTableLocale } from '@/registry/components/shadcntable/contexts/data-table-locale-context'
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+
+import { defaultDataTableLocale } from '@/registry/components/shadcntable/config/locale'
+import { useDataTableLocale } from '@/registry/components/shadcntable/contexts/data-table-locale-context'
 
 describe('useDataTableLocale', () => {
   it('returns defaultDataTableLocale when used outside of DataTableLocaleProvider', () => {

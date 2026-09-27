@@ -1,10 +1,11 @@
+import { type ColumnDef } from '@tanstack/react-table'
+import { screen, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+
 import { defaultDataTableLocale } from '@/registry/components/shadcntable/config/locale'
 import { DataTable } from '@/registry/components/shadcntable/data-table'
 import { DataTableColumnHeader } from '@/registry/components/shadcntable/data-table-column-header'
 import { render } from '@/vitest.utils'
-import { type ColumnDef } from '@tanstack/react-table'
-import { screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
 
 type TestUser = {
   id: string
