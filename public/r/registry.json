@@ -7,10 +7,9 @@
       "name": "data-table",
       "type": "registry:block",
       "title": "Data Table",
-      "description": "Data Table",
-      "dependencies": ["@tanstack/react-table", "date-fns", "lucide-react"],
+      "description": "A composable data table built on TanStack Table v9: sorting, filtering, global search, pagination, row selection and column visibility, client or server side.",
+      "dependencies": ["@tanstack/react-table@^9.2.4", "date-fns", "lucide-react"],
       "registryDependencies": [
-        "badge",
         "button",
         "calendar",
         "checkbox",
@@ -20,13 +19,11 @@
         "input",
         "popover",
         "select",
+        "skeleton",
+        "spinner",
         "table"
       ],
       "files": [
-        {
-          "path": "registry/components/shadcntable/data-table-body.tsx",
-          "type": "registry:component"
-        },
         {
           "path": "registry/components/shadcntable/data-table-column-filter.tsx",
           "type": "registry:component"
@@ -36,15 +33,11 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/components/shadcntable/data-table-header.tsx",
-          "type": "registry:component"
-        },
-        {
           "path": "registry/components/shadcntable/data-table-pagination.tsx",
           "type": "registry:component"
         },
         {
-          "path": "registry/components/shadcntable/data-table-row-selection.tsx",
+          "path": "registry/components/shadcntable/data-table-selection-column.tsx",
           "type": "registry:component"
         },
         {
@@ -80,27 +73,23 @@
           "type": "registry:component"
         },
         {
-          "path": "registry/components/shadcntable/types/locale.ts",
+          "path": "registry/components/shadcntable/lib/features.ts",
           "type": "registry:component"
         },
         {
-          "path": "registry/components/shadcntable/types/filters.ts",
+          "path": "registry/components/shadcntable/lib/filter-fns.ts",
           "type": "registry:component"
         },
         {
-          "path": "registry/components/shadcntable/config/locale.ts",
+          "path": "registry/components/shadcntable/lib/locale.tsx",
           "type": "registry:component"
         },
         {
-          "path": "registry/components/shadcntable/contexts/data-table-locale-context.tsx",
+          "path": "registry/components/shadcntable/lib/types.ts",
           "type": "registry:component"
         },
         {
-          "path": "registry/components/shadcntable/utils/debounce.ts",
-          "type": "registry:component"
-        },
-        {
-          "path": "registry/components/shadcntable/hooks/use-shadcn-table.tsx",
+          "path": "registry/components/shadcntable/use-data-table.ts",
           "type": "registry:component"
         }
       ]
