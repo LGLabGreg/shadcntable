@@ -38,10 +38,8 @@ export interface DataTableLocale {
   filters: {
     search: string
     noResults: string
-    selected: (count: number) => string
     min: string
     max: string
-    pickDateRange: string
   }
 }
 
@@ -81,10 +79,8 @@ export const defaultDataTableLocale: DataTableLocale = {
   filters: {
     search: 'Search...',
     noResults: 'No results found.',
-    selected: (count) => `${count} selected`,
     min: 'Min',
     max: 'Max',
-    pickDateRange: 'Pick a date range',
   },
 }
 

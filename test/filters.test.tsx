@@ -220,6 +220,39 @@ describe('date range filter', () => {
     expect(getRenderedNames()).toEqual(['Standing Desk', 'Monitor'])
   })
 
+  it('accepts timestamps and date strings as cell values', () => {
+    type Event = { name: string; at: number | string | null }
+    const helper = createDataTableColumnHelper<Event>()
+    const eventColumns = helper.columns([
+      helper.accessor('name', {
+        cell: ({ getValue }) => <span data-testid='name'>{getValue()}</span>,
+      }),
+      helper.accessor('at', { meta: { filter: { variant: 'dateRange' } } }),
+    ])
+
+    render(
+      <TestTable
+        columns={eventColumns}
+        data={[
+          { name: 'Laptop Pro', at: new Date(2024, 5, 3).getTime() },
+          { name: 'Monitor', at: '2024-06-04T12:00:00' },
+          { name: 'Office Chair', at: '2024-07-01T12:00:00' },
+          { name: 'Standing Desk', at: null },
+        ]}
+        initialState={{
+          columnFilters: [
+            {
+              id: 'at',
+              value: { from: new Date(2024, 5, 1), to: new Date(2024, 5, 30) },
+            },
+          ],
+        }}
+      />,
+    )
+
+    expect(getRenderedNames()).toEqual(['Laptop Pro', 'Monitor'])
+  })
+
   it('picks a range with the calendar', async () => {
     const { user } = render(
       <TestTable

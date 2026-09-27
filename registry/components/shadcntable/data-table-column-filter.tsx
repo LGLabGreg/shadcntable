@@ -49,9 +49,7 @@ export function DataTableColumnFilter<TData extends RowData, TValue>({
       return <DateRangeFilter {...props} />
     case 'numberRange':
       return <NumberRangeFilter {...props} />
-    case 'custom':
-      return <config.component {...props} />
-    default:
-      return null
   }
+
+  return <config.component {...props} />
 }
